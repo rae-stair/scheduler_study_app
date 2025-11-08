@@ -6,19 +6,32 @@
   <link rel="stylesheet" href="planner.css">
 </head>
 <body>
-
-  <div id="nav-header">
-    <button onclick="changePeriod(-1)"> ← </button>
-    <span id="calendar-title">PLACEHOLDER</span>
-    <button onclick="changePeriod(1)"> → </button>
-  </div>
-  
-  <div id="view-switcher">
-    <button onclick="setView('weekly')">Weekly</button>
-    <button onclick="setView('monthly')">Monthly</button>
+  <div id="sidebar">
+    <button class="icon-button" onclick="setView('monthly')">📅</button>
+    <button class="icon-button">📖</button>
+    <button class="icon-button">✔️</button>
+    <button class="icon-button">⏰</button>
+    <button class="icon-button">⚙️</button>
   </div>
 
-  <div id="calendar"></div>
+  <div id="main-content">
+
+    <div id="nav-header">
+      <button onclick="changePeriod(-1)"> ← </button>
+      <span id="calendar-title">PLACEHOLDER</span>
+      <button onclick="changePeriod(1)"> → </button>
+    </div>
+    
+    <div id="view-switcher">
+      <button onclick="setView('weekly')">Weekly</button>
+      <button onclick="setView('monthly')">Monthly</button>
+    </div>
+
+    <div id="day-labels"></div>
+
+    <div id="calendar"></div>
+
+  </div>
 
   <script src="planner.js"></script>
 </body>
