@@ -7,32 +7,15 @@
 </head>
 <body>
   <div id="sidebar">
-    <button class="icon-button" onclick="setView('monthly')">📅</button>
-    <button class="icon-button">📖</button>
-    <button class="icon-button">✔️</button>
-    <button class="icon-button">⏰</button>
-    <button class="icon-button">⚙️</button>
+    <button class="icon-button active" data-page="calendar.html" onclick="setView('monthly')">📅</button>
+    <button class="icon-button" data-page="notes.html">📖</button>
+    <button class="icon-button" data-page="checklists.html">✔️</button>
+    <button class="icon-button" data-page="timers.html">⏰</button>
+    <button class="icon-button" data-page="settings.html">⚙️</button>
   </div>
 
-  <div id="main-content">
-
-    <div id="nav-header">
-      <button onclick="changePeriod(-1)"> ← </button>
-      <span id="calendar-title">PLACEHOLDER</span>
-      <button onclick="changePeriod(1)"> → </button>
-    </div>
-    
-    <div id="view-switcher">
-      <button onclick="setView('weekly')">Weekly</button>
-      <button onclick="setView('monthly')">Monthly</button>
-    </div>
-
-    <div id="day-labels"></div>
-
-    <div id="calendar"></div>
-
-  </div>
-
+  <div id="main-content"></div>
+  <script src="sidebar.js"></script>
   <script src="planner.js"></script>
 </body>
 </html>
