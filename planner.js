@@ -1,5 +1,5 @@
 const tasks = [
-  { date: "2025-11-06", title: "Math homework" },
+  { date: "2025-11-06", title: "Math homework"},
   { date: "2025-11-07", title: "Read history" },
   { date: "2025-11-10", title: "Biology quiz" },
   { date: "2025-11-15", title: "Group project" }
@@ -44,9 +44,31 @@ function changePeriod(offset) {
 
 function renderCalendar() {
   const calendar = document.getElementById('calendar');
+  const dayLabels = document.getElementById('day-labels');
   calendar.innerHTML = '';
+  dayLabels.innerHTML = '';
 
   if (currentView === 'weekly') {
+    const startOfWeek = new Date(currentWeekStart);
+
+    const spacer = document.createElement('div');
+    spacer.className = 'day-label-spacer';
+    dayLabels.appendChild(spacer);
+
+    for (let i = 0; i < 7; i++) {
+      const date = new Date(startOfWeek);
+      date.setDate(startOfWeek.getDate() + i);
+
+      const label = document.createElement('div');
+      label.textContent = date.toLocaleDateString(undefined, {
+        weekday: 'short',
+        day: 'numeric',
+        month: 'short'
+      });
+      label.className = 'day-label';
+      dayLabels.appendChild(label);
+    }
+
     renderWeeklyView();
   } else if (currentView === 'monthly') {
     renderMonthlyView();
@@ -61,52 +83,52 @@ function renderWeeklyView() {
   document.getElementById('calendar-title').textContent =
     `${monthName} ${startOfWeek.getFullYear()}`;
 
-  const grid = document.createElement('div');
-  grid.style.display = 'grid';
-  grid.style.gridTemplateColumns = 'repeat(7, 1fr)';
-  grid.style.height = '400px';
-  grid.style.gap = '0px';
+  const container = document.createElement('div');
+  container.className = 'week-grid';
+
+  const timeColumn = document.createElement('div');
+  timeColumn.className = 'time-column';
+
+  for (let hour = 0; hour < 24; hour++) {
+  const timeCell = document.createElement('div');
+  const displayHour = ((hour + 11) % 12 + 1); // converts 0–23 to 1–12
+  const period = hour < 12 ? 'AM' : 'PM';
+  timeCell.textContent = `${displayHour}:00 ${period}`;
+  timeCell.className = 'hour-row';
+  timeColumn.appendChild(timeCell);
+}
+
+  container.appendChild(timeColumn);
 
   for (let i = 0; i < 7; i++) {
     const date = new Date(startOfWeek);
     date.setDate(startOfWeek.getDate() + i);
     const dateStr = date.toISOString().split('T')[0];
 
-    const cell = document.createElement('div');
-    cell.style.border = '1px solid #ccc';
-    cell.style.padding = '6px';
-    cell.style.boxSizing = 'border-box';
-    cell.style.backgroundColor = '#fff';
-    cell.style.display = 'flex';
-    cell.style.flexDirection = 'column';
-    cell.style.justifyContent = 'flex-start';
-    cell.style.overflowY = 'auto';
+    const column = document.createElement('div');
+    column.className = 'week-column';
 
-    if (dateStr === new Date().toISOString().split('T')[0]) {
-      cell.style.backgroundColor = '#bfe3f39f';
-      cell.style.border = '1px solid #ccc';
+    for (let hour = 0; hour < 24; hour++) {
+      const hourBlock = document.createElement('div');
+      hourBlock.className = 'hour-row';
+
+      const dayTasks = tasks.filter(t => t.date === dateStr);
+      dayTasks.forEach(t => {
+        const task = document.createElement('div');
+        task.textContent = t.title;
+        task.style.fontSize = '0.85em';
+        task.style.padding = '2px 0';
+        task.style.wordWrap = 'break-word';
+        hourBlock.appendChild(task);
+      });
+
+      column.appendChild(hourBlock);
     }
 
-    const header = document.createElement('div');
-    header.textContent = date.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
-    header.style.fontWeight = 'bold';
-    header.style.marginBottom = '4px';
-    cell.appendChild(header);
-
-    const dayTasks = tasks.filter(t => t.date === dateStr);
-    dayTasks.forEach(t => {
-      const task = document.createElement('div');
-      task.textContent = t.title;
-      task.style.fontSize = '0.85em';
-      task.style.padding = '2px 0';
-      task.style.wordWrap = 'break-word';
-      cell.appendChild(task);
-    });
-
-    grid.appendChild(cell);
+    container.appendChild(column);
   }
 
-  calendar.appendChild(grid);
+  calendar.appendChild(container);
 }
 
 function renderMonthlyView() {
@@ -128,7 +150,7 @@ function renderMonthlyView() {
     const cell = document.createElement('div');
     cell.textContent = day;
     cell.style.fontWeight = 'bold';
-    cell.style.fontSize = '26px';
+    cell.style.fontSize = '24px';
     cell.style.textAlign = 'center';
     cell.style.marginTop = 'auto';
     cell.style.paddingBottom = '4px';
@@ -144,18 +166,9 @@ function renderMonthlyView() {
     const date = new Date(currentYear, currentMonth, day);
     const dateStr = date.toISOString().split('T')[0];
     const cell = document.createElement('div');
-    cell.style.border = '1px solid #ccc';
-    cell.style.padding = '6px';
-    cell.style.boxSizing = 'border-box';
-    cell.style.backgroundColor = '#fff';
-    cell.style.display = 'flex';
-    cell.style.flexDirection = 'column';
-    cell.style.justifyContent = 'flex-start';
-    cell.style.overflowY = 'auto';
-
+    cell.className = 'calendar-cell';
     if (dateStr === new Date().toISOString().split('T')[0]) {
-      cell.style.backgroundColor = '#bfe3f39f';
-      cell.style.border = '1px solid #ccc';
+      cell.classList.add('today');
     }
 
     const header = document.createElement('div');
