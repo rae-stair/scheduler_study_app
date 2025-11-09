@@ -4,6 +4,7 @@ html, body {
   margin: 0;
   padding: 0;
   min-height: 100vh;
+  overflow: hidden;
   font-family: "Poppins", sans-serif;
   background-color: #e2f2ff;
   color: #003d66;
@@ -40,6 +41,7 @@ body {
 #main-content {
   flex: 1;
   padding: 20px;
+  overflow: hidden;
 }
 
 #view-switcher {

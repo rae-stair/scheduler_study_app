@@ -5,7 +5,7 @@ const tasks = [
   { date: "2025-11-15", title: "Group project" }
 ];
 
-let currentView = 'weekly';
+let currentView = 'monthly';
 let currentMonth = new Date().getMonth();
 let currentYear = new Date().getFullYear();
 let currentWeekStart = getStartOfWeek(new Date());
@@ -143,7 +143,7 @@ function renderMonthlyView() {
   const grid = document.createElement('div');
   grid.style.display = 'grid';
   grid.style.gridTemplateColumns = 'repeat(7, 1fr)';
-  grid.style.gridAutoRows = '120px';
+  grid.style.gridAutoRows = '80px';
   grid.style.gap = '0px';
 
   ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].forEach(day => {

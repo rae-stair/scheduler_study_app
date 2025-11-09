@@ -5,11 +5,12 @@ const tabs = document.querySelectorAll('.icon-button');
     async function loadPage(url) {
       try {
         content.innerHTML = '<p>Loading...</p>';
-        const response = await fetch(url);
+        const response = await fetch(`pages/${url}`);
         if (!response.ok) throw new Error('Page not found');
         const html = await response.text();
         content.innerHTML = html;
-        if(url == 'calendar.html') renderCalendar();
+        if(url == 'calendar.html') renderMonthlyView();
+        if(url == 'notes.html') populateIconGrid();
       } catch (err) {
         content.innerHTML = `<p style="color:red;">${err.message}</p>`;
       }
