@@ -5,14 +5,15 @@
       left: 50%;
       transform: translate(-50%, -50%);
       border-radius: 5px;
-      width: 50vw;
-      height: 50vh;
-      background-color: #dcc576;
-      border: 1px solid #ead584;
+      width: 60vw;
+      height: 60vh;
+      background-color: #bfe3f39f;
+      border: 1px solid #ccc;
       display: none;
       padding: 10px;
       box-sizing: border-box;
-      
+      font-family: "Poppins", sans-serif;
+      color: #003d66;
     }
 
     /* Text area inside popup */
@@ -24,6 +25,8 @@
       border: 1px solid transparent;
       margin-bottom: 10px;
       font-size: large;
+      font-family: "Poppins", sans-serif;
+      color: #003d66;
     }
     #titletext {
       text-align: center; /* center text horizontally */
@@ -64,20 +67,23 @@
 
     .iconLabel {
       font-size: 0.9em;
-      color: #333;
+      font-family: "Poppins", sans-serif;
+      color: #003d66;
     }
 
     /* Buttons */
     .cardBtn {
-      background-color: #dcc576;
-      border: 1px solid #ead584;
+      background-color: #bfe3f39f;
+      border: 1px solid #ccc;
       padding: 5px 10px;
       margin-right: 5px;
       cursor: pointer;
+      font-family: "Poppins", sans-serif;
+      color: #003d66;
     }
     .cardBtn:hover {
-      background-color: #ead584;
-      border: 1px solid #ead584;
+      background-color: #bfe3f39f;
+      border: 1px solid #ccc;
     }
 
     #setBtn {
