@@ -1,0 +1,161 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
+
+html, body {
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  font-family: "Poppins", sans-serif;
+  background-color: #e2f2ff;
+  color: #003d66;
+}
+
+body {
+  display: flex;
+}
+
+#sidebar {
+  min-height: 100vh;
+  width: 60px;
+  background-color: #bfe3f39f;
+  border-right: 2px solid #ccc;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 20px;
+}
+
+.icon-button {
+  background: none;
+  border: none;
+  font-size: 24px;
+  margin: 12px 0;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.icon-button:hover {
+  transform: scale(1.2);
+}
+
+#main-content {
+  flex: 1;
+  padding: 20px;
+}
+
+#view-switcher {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+#nav-header {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+#calendar-title {
+  font-size: 28px;
+  font-weight: 600;
+  text-align: center;
+  margin-bottom: 6px;
+}
+
+#day-labels {
+  display: flex;
+  margin-bottom: 4px;
+}
+
+.day-label-spacer {
+  flex: 0 0 80px;
+}
+
+.day-label {
+  flex: 1;
+  text-align: center;
+  font-weight: bold;
+  font-size: 20px;
+  color: #003d66;
+  box-sizing: border-box;
+}
+
+.week-grid {
+  display: flex;
+  max-height: 600px;
+  overflow-y: auto;
+}
+
+.time-column {
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  background-color: #e2f2ff;
+  border-right: 1px solid #ccc;
+  font-size: medium;
+  font-family: "Poppins", sans-serif;
+  justify-content: right;
+}
+
+.week-column {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  border-right: 1px solid #ccc;
+  background-color: #fff;
+}
+
+.hour-row {
+  height: 120px;
+  padding: 0 4px;
+  font-size: 12px;
+  border-bottom: 1px solid #eee;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+}
+
+.calendar-cell {
+  border: 1px solid #ccc;
+  padding: 6px;
+  box-sizing: border-box;
+  background-color: #fff;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  overflow-y: auto;
+}
+
+.calendar-cell.today {
+  background-color: #bfe3f39f;
+  border: 1px solid #ccc;
+}
+
+button {
+  background-color: #bfe3f39f;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  color: #003d66;
+  font-family: 'Poppins', sans-serif;
+  font-weight: 500;
+  font-size: 14px;
+  padding: 8px 16px;
+  margin-right: 10px;
+  cursor: pointer;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+button:hover {
+  background-color: #bfe3f3;
+  border-color: #aaa;
+}
+
+.time-column .hour-row {
+  justify-content: flex-end;
+  font-weight: bold;
+  font-family: "Poppins", sans-serif;
+  font-size: 14px;
+}
