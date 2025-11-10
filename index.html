@@ -5,22 +5,96 @@
   <title>Study Planner</title>
   <link rel="stylesheet" href="planner.css">
   <link rel="stylesheet" href="notes.css">
-  
+  <link rel="stylesheet" href="timer.css">
 </head>
 <body>
+  <!-- Sidebar Navigation -->
   <div id="sidebar">
-    <button class="icon-button active" data-page="calendar.html" onclick="setView('monthly')">📅</button>
-    <button class="icon-button" data-page="notes.html">📖</button>
-    <button class="icon-button" data-page="checklists.html">✔️</button>
-    <button class="icon-button" data-page="timers.html">⏰</button>
-    <button class="icon-button" data-page="settings.html">⚙️</button>
+    <button class="icon-button active" onclick="showView('calendarView')">📅</button>
+    <button class="icon-button" onclick="showView('notesView')">📖</button>
+    <button class="icon-button" onclick="showView('checklistsView')">✔️</button>
+    <button class="icon-button" onclick="showView('timerView')">⏰</button>
+    <button class="icon-button" onclick="showView('settingsView')">⚙️</button>
   </div>
 
-  <div id="main-content"></div>
-    <script src="flashcards.js"></script>
-  <script src="notecard.js"></script>
-  <script src="sidebar.js"></script>
+  <div id="main-content">
+
+    <div id="calendarView">
+      <div id="calendar-header">
+        <!-- Left spacer to balance flex layout -->
+        <div style="visibility: hidden;"></div>
+
+        <!-- Center block: arrows + title + view switcher -->
+        <div id="title-block">
+          <div id="title-nav">
+            <button onclick="changePeriod(-1)">←</button>
+            <h2 id="calendar-title">Calendar</h2>
+            <button onclick="changePeriod(1)">→</button>
+          </div>
+          <div id="view-switcher">
+            <button onclick="setView('weekly')">Weekly</button>
+            <button onclick="setView('monthly')">Monthly</button>
+          </div>
+        </div>
+
+        <!-- Right: Clock -->
+        <div id="clock-container" onclick="showView('timerView')" style="cursor: pointer;">
+          <div class="analog-clock">
+            <div class="hand hour"></div>
+            <div class="hand minute"></div>
+            <div class="center-dot"></div>
+          </div>
+          <div class="digital-clock" id="digitalClock">00:00 AM</div>
+        </div>
+      </div>
+
+      <!-- Calendar Content -->
+      <div id="day-labels"></div>
+      <div id="calendar"></div>
+    </div>
+
+    <!-- Notes / Flashcards View -->
+    <div id="notesView" style="display: none;">
+      <button id="setBtn" onclick="addSet()">+ New Set</button>
+      <div id="iconGrid"></div>
+      <div id="note-card">
+        <h1 id="titletext"></h1>
+        <textarea id="message" name="message" placeholder="Enter your question here..."></textarea>
+        <div id="edBtn">
+          <textarea id="answer" name="answer" placeholder="Enter your answer here..."></textarea>
+          <button class="cardBtn" id="saveBtn" onclick="addMessage()">+</button>
+          <button class="cardBtn" onclick="saveSet()">save</button>
+        </div>
+        <div id="cdBtn">
+          <button class="cardBtn" id="prev" onclick="prevCard()">←</button>
+          <button class="cardBtn" id="next" onclick="nextCard()">→</button>
+          <button class="cardBtn" id="answer" onclick="showAnswer()">Answer</button>
+          <button class="cardBtn" id="exit" onclick="saveSet()">x</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Timers View -->
+    <div id="timerView" style="display: none;">
+      <div id="timer-container"></div>
+    </div>
+
+    <!-- Placeholder Views -->
+    <div id="checklistsView" style="display: none;">
+      <p>Checklists view coming soon...</p>
+    </div>
+    <div id="settingsView" style="display: none;">
+      <p>Settings view coming soon...</p>
+    </div>
+  
+  </div>
+
+  <!-- Scripts -->
   <script src="planner.js"></script>
+
+  <script>
+  window.onload = () => showView("calendarView");
+  </script>
+
 </body>
 </html>
-
