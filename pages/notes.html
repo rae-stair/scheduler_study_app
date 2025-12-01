@@ -3,9 +3,21 @@
 
   <!-- Grid container -->
   <div id="iconGrid"></div>
+
   <!-- Note popup -->
   <div id="note-card">
     <h1 id="titletext"></h1>
+
+
+  <!-- Flip card-->
+   <div id="flashcard" class="flashcard">
+    <div class="flashcard-inner">
+      <div class="flashcard-front"></div>
+      <div class="flashcard-back"></div>
+    </div>
+   </div>
+
+   <!-- Text Area-->
     <textarea id="message" name="message" placeholder="Enter your question here..."></textarea>
     <div id="edBtn">
       <textarea id="answer" name="answer" placeholder="Enter your answer here..."></textarea>
@@ -21,3 +33,91 @@
     </div>
 
   </div>
+  <!-- Option Design-->
+  <style>
+    .set-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+    }
+
+    .options-set-btn {
+      margin-top: 6px;
+      background: #8db4ff;
+      color: white;
+      border: none;
+      padding: 5px 10px;
+      font-size: 12px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .options-set-btn:hover {
+      background: #6e99ff;
+    }
+
+    .options-menu {
+      display: none;
+      position: absolute;
+      top: 75px;
+      background: white;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      width: 130px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.25);
+      z-index: 10;
+    }
+
+    .options-item {
+      padding: 8px 14px;
+      cursor: pointer;
+      font-size: 14px;
+      text-align: left; 
+    }
+
+    .options-item:hover {
+      background: #eaf0ff;
+    }
+
+    .flashcard {
+      width: 100%;
+      height: 60%;
+      perspective: 1000px;
+      margin-bottom: 15px;
+      display: none;
+    }
+
+    .flashcard-inner {
+      width: 100%;
+      height: 100%;
+      transition: transform 0.6s;
+      transform-style: preserve-3d;
+      position: relative;
+    }
+
+    .flashcard.flipped .flashcard-inner {
+       transform: rotateY(180deg);
+    }
+
+    .flashcard-front,
+    .flashcard-back {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      backface-visibility: hidden;
+      background: #fff6d9;
+      border: 2px solid #ead584;
+      border-radius: 10px;
+      padding: 20px;
+      font-size: 21px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .flashcard-back {
+      transform: rotateY(180deg);
+    }
+  </style>
+

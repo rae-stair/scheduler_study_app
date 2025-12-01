@@ -86,3 +86,64 @@
       padding: 5px 10px;
       cursor: pointer;
     }
+
+    #flashcard {
+      width: 90%;
+      height: 50%;
+      margin: 20px auto 0;
+      display: none;
+      perspective: 1000px;
+      position: relative;
+      z-index: 10;
+    }
+
+    .flashcard-inner {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      transform-style: preserve-3d;
+      transition: transform 0.6s ease;
+    }
+
+    #flashcard.flipped .flashcard-inner {
+      transform: rotateY(180deg);
+    }
+    
+    .flashcard-front,
+    .flashcard-back {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      border: 2px solid #ead584;
+      border-radius: 12px;
+      padding: 25px;
+      box-sizing: border-box;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+
+      font-size: 22px;
+      backface-visibility: hidden;
+    }
+
+    .flashcard-front {
+      background: #fdf5c0;
+      color: #333;
+    }
+
+    .flashcard-back {
+      transform: rotateY(180deg);
+      background: #ffe1a8;
+      color: #333;
+    }
+
+    body.study-mode #note-card {
+      background: transparent;
+      border:none;
+      box-shadow: none;
+    }
+    
+    body.study-mode #flashcard {
+      display:block;
+    }
+
