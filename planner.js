@@ -2,6 +2,7 @@
 let flashcardSets = JSON.parse(localStorage.getItem('flashcardSets') || '{}');
 let setName = "";
 let currentIdx = 0;
+let showingAnswer = false;
 
 function addSet() {
   const userInput = prompt("Enter your set name:");
@@ -12,6 +13,9 @@ function addSet() {
   }
 
   setName = userInput;
+  flashcardSets[setName] = [];
+  localStorage.setItem('flashcardSets', JSON.stringify(flashcardSets));
+  populateIconGrid();
   document.getElementById("setBtn").style.display = "none";
   document.getElementById("message").value = "";
   document.getElementById("iconGrid").style.display = "none";
@@ -21,23 +25,27 @@ function addSet() {
 }
 
 function addMessage() {
-  const textarea = document.getElementById('message');
-  const answerarea = document.getElementById('answer');
-  const text = textarea.value.trim();
-  const answer = answerarea.value.trim();
+  const question = document.getElementById("message").value.trim();
+  const answer = document.getElementById("answer").value.trim();
 
-  if (!setName || !text || !answer) {
-    alert("Set name and flashcard text cannot be empty!");
+  if (!setName || !question || !answer) {
+    alert("Question and answer cannot be empty.");
     return;
   }
 
   if (!flashcardSets[setName]) flashcardSets[setName] = [];
-  flashcardSets[setName].push({ text }, { answer });
-  localStorage.setItem('flashcardSets', JSON.stringify(flashcardSets));
 
-  textarea.value = "";
-  answerarea.value = "";
-  alert(`Flashcard saved to "${setName}"!`);
+  flashcardSets[setName].push({
+    question: question,
+    answer: answer
+  });
+
+  localStorage.setItem("flashcardSets", JSON.stringify(flashcardSets));
+
+  document.getElementById("message").value = "";
+  document.getElementById("answer").value = "";
+
+  alert("Flashcard added!");
 }
 
 function saveSet() {
@@ -64,22 +72,21 @@ function openSet(id) {
 function openFlash(id) {
   setName = id;
   currentIdx = 0;
-  const textarea = document.getElementById('message');
+  showingAnswer = false;
+
   document.getElementById("titletext").style.display = "block";
-  document.getElementById("setBtn").style.display = "none";
   document.getElementById("iconGrid").style.display = "none";
   document.getElementById("note-card").style.display = "block";
   document.getElementById("edBtn").style.display = "none";
   document.getElementById("cdBtn").style.display = "block";
-  textarea.readOnly = true;
-  textarea.style.outline = "none";
+
   showFlashcard();
 }
 
 function showFlashcard() {
   const flashcards = flashcardSets[setName];
-  const textarea = document.getElementById('message');
-  const titletext = document.getElementById('titletext');
+  const textarea = document.getElementById("message");
+  const title = document.getElementById("titletext");
 
   if (!flashcards || flashcards.length === 0) {
     textarea.value = "(No flashcards in this set)";
@@ -89,28 +96,60 @@ function showFlashcard() {
   if (currentIdx < 0) currentIdx = flashcards.length - 1;
   if (currentIdx >= flashcards.length) currentIdx = 0;
 
-  if (currentIdx % 2 === 1) {
-    titletext.textContent = `Answer ${(1 + currentIdx) / 2}`;
-    textarea.value = flashcards[currentIdx].answer;
-  } else {
-    titletext.textContent = `Question ${1 + currentIdx / 2}`;
-    textarea.value = flashcards[currentIdx].text;
+  const card = flashcards[currentIdx];
+
+  if (!card || !card.question || !card.answer) {
+    textarea.value = "(This card is corrupted — delete and remake it)";
+    return;
   }
+
+  textarea.readOnly = false;
+
+  if (showingAnswer) {
+    title.innerText = `Answer ${currentIdx + 1}`;
+    textarea.value = card.answer;
+  } else {
+    title.innerText = `Question ${currentIdx + 1}`;
+    textarea.value = card.question;
+  }
+
+  textarea.readOnly = true;
 }
 
 function prevCard() {
-  currentIdx = currentIdx % 2 === 1 ? currentIdx - 1 : currentIdx - 2;
+  currentIdx--;
+  showingAnswer = false;
   showFlashcard();
 }
 
 function nextCard() {
-  currentIdx = currentIdx % 2 === 1 ? currentIdx + 1 : currentIdx + 2;
+  currentIdx++;
+  showingAnswer = false;
   showFlashcard();
 }
 
 function showAnswer() {
-  currentIdx = currentIdx % 2 === 1 ? currentIdx - 1 : currentIdx + 1;
+  showingAnswer = !showingAnswer;
   showFlashcard();
+}
+
+function deleteSet() {
+  if (!setName) return;
+
+  const confirmDelete = confirm(`Are you sure you want to delete the set "${setName}"? This cannot be undone.`);
+  if (!confirmDelete) return;
+
+  delete flashcardSets[setName];
+
+  localStorage.setItem("flashcardSets", JSON.stringify(flashcardSets));
+
+  document.getElementById("note-card").style.display = "none";
+  document.getElementById("iconGrid").style.display = "grid";
+  document.getElementById("setBtn").style.display = "block";
+
+  populateIconGrid();
+
+  alert("Set deleted successfully.");
 }
 
 function populateIconGrid() {
