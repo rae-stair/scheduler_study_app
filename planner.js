@@ -468,7 +468,24 @@ function openCalendarModal(type) {
   document.getElementById('calendarModalStart').value = '';
   document.getElementById('calendarModalEnd').value = '';
   document.getElementById('calendarModalRepeat').value = 'none';
+
+  const linkContainer = document.getElementById('calendarModalEventLinkContainer');
+  const select = document.getElementById('calendarModalEventLink');
+
+  if (type === 'task') {
+    linkContainer.style.display = 'block';
+    select.innerHTML = '<option value="">None</option>';
+    events.forEach(e => {
+      const opt = document.createElement('option');
+      opt.value = e.id;
+      opt.textContent = `${e.title} (${e.date})`;
+      select.appendChild(opt);
+    });
+  } else {
+    linkContainer.style.display = 'none'; // hide for events
+  }
 }
+
 
 function confirmCalendarModal() {
   const title = document.getElementById('calendarModalTitleInput').value.trim();
@@ -478,22 +495,23 @@ function confirmCalendarModal() {
   const repeat = document.getElementById('calendarModalRepeat').value;
 
   if (!title || !date || !startTime || !endTime) {
-    alert('Fill out all fields'); // you can replace this with a nicer inline error
+    alert('Fill out all fields');
     return;
   }
 
   if (calendarModal.type === 'task') {
-    const newTask = { id: Date.now(), title, date, startTime, endTime, checked: false };
-    tasks.push(newTask);
-    saveTasks();
-    renderCalendar();
-    renderChecklist();
-  } else if (calendarModal.type === 'event') {
-    const newEvent = { id: Date.now(), title, date, startTime, endTime, repeat };
-    events.push(newEvent);
-    saveEvents();
-    renderCalendar();
-  }
+  const eventId = document.getElementById('calendarModalEventLink').value || null;
+  const newTask = { id: Date.now(), title, date, startTime, endTime, checked: false, eventId };
+  tasks.push(newTask);
+  saveTasks();
+  renderCalendar();
+  renderChecklist();
+} else if (calendarModal.type === 'event') {
+  const newEvent = { id: Date.now(), title, date, startTime, endTime, repeat };
+  events.push(newEvent);
+  saveEvents();
+  renderCalendar();
+}
 
   closeCalendarModal();
 }
@@ -669,6 +687,15 @@ function renderWeeklyView() {
         if (hStart === hour) {
           const el = document.createElement('div');
           el.textContent = `${t.title} (${t.startTime}-${t.endTime})`;
+
+          // show linked event
+          if (t.eventId) {
+            const linkedEvent = events.find(e => e.id == t.eventId);
+            if (linkedEvent) {
+              el.textContent += ` → ${linkedEvent.title}`;
+            }
+          }
+
           el.style.fontSize = '0.85em';
           el.style.wordWrap = 'break-word';
           if (t.checked) el.style.textDecoration = 'line-through';
@@ -693,8 +720,7 @@ function renderWeeklyView() {
       // Events
       const dayEvents = expandRepeatingEventsForDate(dateStr, events);
       dayEvents.forEach(e => {
-        if (!e.startTime || !e.endTime) return; // guard
-
+        if (!e.startTime || !e.endTime) return;
         const [hStart] = e.startTime.split(':').map(Number);
         if (hStart === hour) {
           const el = document.createElement('div');
@@ -745,14 +771,12 @@ function renderMonthlyView() {
     titleEl.textContent = `${firstDay.toLocaleString('default', { month: 'long' })} ${currentYear}`;
   }
 
-  // Build header + grid
   const grid = document.createElement('div');
   grid.style.display = 'grid';
   grid.style.gridTemplateColumns = 'repeat(7, 1fr)';
   grid.style.gridAutoRows = '100px';
   grid.style.gap = '0';
 
-  // Header row
   ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].forEach(day => {
     const cell = document.createElement('div');
     cell.textContent = day;
@@ -762,12 +786,10 @@ function renderMonthlyView() {
     grid.appendChild(cell);
   });
 
-  // Empty cells before first day
   for (let i = 0; i < firstDay.getDay(); i++) {
     grid.appendChild(document.createElement('div'));
   }
 
-  // Day cells
   for (let day = 1; day <= daysInMonth; day++) {
     const d = new Date(currentYear, currentMonth, day);
     const dateStr = isoDate(d);
@@ -790,6 +812,15 @@ function renderMonthlyView() {
     tasks.filter(t => t.date === dateStr).forEach(t => {
       const el = document.createElement('div');
       el.textContent = `${t.title} (${t.startTime}-${t.endTime})`;
+
+      // show linked event
+      if (t.eventId) {
+        const linkedEvent = events.find(e => e.id == t.eventId);
+        if (linkedEvent) {
+          el.textContent += ` → ${linkedEvent.title}`;
+        }
+      }
+
       el.style.fontSize = '0.85em';
       el.style.wordWrap = 'break-word';
       if (t.checked) el.style.textDecoration = 'line-through';
@@ -804,10 +835,10 @@ function renderMonthlyView() {
       cell.appendChild(el);
     });
 
-    // Events (expanded for repeats)
+    // Events
     const dayEvents = expandRepeatingEventsForDate(dateStr, events);
     dayEvents.forEach(e => {
-      if (!e.startTime || !e.endTime) return; // guard
+      if (!e.startTime || !e.endTime) return;
 
       const el = document.createElement('div');
       el.textContent = `${e.title} (${e.startTime}-${e.endTime})`;
