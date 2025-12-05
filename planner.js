@@ -245,6 +245,7 @@ function initTimers() {
     updateTimerDisplay(i);
   });
 }
+
 //--------------------------- Sidebar View Switching ---------------------------
 function showView(viewId) {
   const views = ["calendarView", "notesView", "checklistsView", "timerView", "settingsView"];
