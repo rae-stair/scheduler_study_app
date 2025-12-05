@@ -452,23 +452,64 @@ function isTodayISO(iso) {
   return iso === isoDate(new Date());
 }
 
+// ===== Modal State =====
+let calendarModal = { type: null };
+
+// ===== Modal Helpers =====
+function openCalendarModal(type) {
+  calendarModal.type = type;
+  document.getElementById('calendarModalTitle').textContent =
+    type === 'task' ? 'New Task' : 'New Event';
+  document.getElementById('calendarModalOverlay').style.display = 'flex';
+
+  // reset fields
+  document.getElementById('calendarModalTitleInput').value = '';
+  document.getElementById('calendarModalDate').value = isoDate(new Date());
+  document.getElementById('calendarModalStart').value = '';
+  document.getElementById('calendarModalEnd').value = '';
+  document.getElementById('calendarModalRepeat').value = 'none';
+}
+
+function confirmCalendarModal() {
+  const title = document.getElementById('calendarModalTitleInput').value.trim();
+  const date = document.getElementById('calendarModalDate').value;
+  const startTime = document.getElementById('calendarModalStart').value;
+  const endTime = document.getElementById('calendarModalEnd').value;
+  const repeat = document.getElementById('calendarModalRepeat').value;
+
+  if (!title || !date || !startTime || !endTime) {
+    alert('Fill out all fields'); // you can replace this with a nicer inline error
+    return;
+  }
+
+  if (calendarModal.type === 'task') {
+    const newTask = { id: Date.now(), title, date, startTime, endTime, checked: false };
+    tasks.push(newTask);
+    saveTasks();
+    renderCalendar();
+    renderChecklist();
+  } else if (calendarModal.type === 'event') {
+    const newEvent = { id: Date.now(), title, date, startTime, endTime, repeat };
+    events.push(newEvent);
+    saveEvents();
+    renderCalendar();
+  }
+
+  closeCalendarModal();
+}
+
+function closeCalendarModal() {
+  document.getElementById('calendarModalOverlay').style.display = 'none';
+  calendarModal.type = null;
+}
+
+
+// ===== Tasks =====
 // ===== Tasks =====
 function createTask() {
-  const title = window.prompt('Task title:');
-  if (!title) return;
-  const date = window.prompt('Date (YYYY-MM-DD):', isoDate(new Date()));
-  if (!date) return;
-  const startTime = window.prompt('Start time (HH:MM):', '09:00');
-  if (!startTime) return;
-  const endTime = window.prompt('End time (HH:MM):', '10:00');
-  if (!endTime) return;
-
-  const newTask = { id: Date.now(), title, date, startTime, endTime, checked: false };
-  tasks.push(newTask);
-  saveTasks();
-  renderCalendar();
-  renderChecklist();
+  openCalendarModal('task');
 }
+
 
 function toggleTask(id) {
   const task = tasks.find(t => t.id === id);
@@ -488,20 +529,7 @@ function deleteTask(id) {
 
 // ===== Events =====
 function addEvent() {
-  const title = window.prompt('Event title:');
-  if (!title) return;
-  const date = window.prompt('Date (YYYY-MM-DD):', isoDate(new Date()));
-  if (!date) return;
-  const startTime = window.prompt('Start time (HH:MM):', '14:00');
-  if (!startTime) return;
-  const endTime = window.prompt('End time (HH:MM):', '15:00');
-  if (!endTime) return;
-  const repeat = window.prompt('Repeat (none/daily/weekly/monthly):', 'none') || 'none';
-
-  const newEvent = { id: Date.now(), title, date, startTime, endTime, repeat };
-  events.push(newEvent);
-  saveEvents();
-  renderCalendar();
+  openCalendarModal('event');
 }
 
 function deleteEvent(id) {
