@@ -77,6 +77,7 @@
 
     <!-- Timers View -->
     <div id="timerView" style="display: none;">
+      <button onclick="createTimer()">+ New Timer</button>  
       <div id="timer-container"></div>
     </div>
 
@@ -96,6 +97,18 @@
   <script>
   window.onload = () => showView("calendarView");
   </script>
+
+  <!-- Modal Overlay -->
+  <div id="modalOverlay" style="display: none;">
+    <div id="modalBox">
+      <h3 id="modalTitle"></h3>
+      <input id="modalInput" type="text" placeholder="Type here..." />
+      <div id="modalButtons">
+        <button onclick="confirmModal()">OK</button>
+        <button onclick="closeModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
 
 </body>
 </html>

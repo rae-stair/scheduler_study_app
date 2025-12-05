@@ -176,12 +176,14 @@ function populateIconGrid() {
 }
 
 //--------------------------- Timers ---------------------------
-const timers = [
-  { label: "t1", duration: 1 * 60 },
-  { label: "t2", duration: 2 * 60 },
-  { label: "t3", duration: 5 * 60 },
-  { label: "t4", duration: 10 * 60 }
-];
+
+// Load timers from localStorage if available, otherwise use defaults
+let timers = JSON.parse(localStorage.getItem('timers') || '[]');
+if (timers.length === 0) {
+  timers = [
+    { label: "Default", duration: 1 * 60 }
+  ];
+}
 
 let timerStates = timers.map(t => ({
   timeLeft: t.duration,
@@ -201,9 +203,9 @@ function updateTimerDisplay(index) {
   const image = document.querySelector(`#timer-${index} .timer-image`);
   if (image) {
     const total = timers[index].duration;
-    const remaining = Math.max(timerStates[index].timeLeft, 0); // clamp to 0
+    const remaining = Math.max(timerStates[index].timeLeft, 0);
     const percent = 1 - (remaining / total);
-    const maxRadius = 80; // half of 160px image
+    const maxRadius = 80;
     const radius = Math.min(Math.floor(percent * maxRadius), maxRadius);
     image.style.clipPath = `circle(${radius}px at 50% 50%)`;
   }
@@ -217,7 +219,7 @@ function startTimer(index) {
       updateTimerDisplay(index);
     } else {
       clearInterval(timerStates[index].interval);
-      alert(`${timers[index].label} finished!`);
+      showNotification(`${timers[index].label} finished!`);
     }
   }, 1000);
 }
@@ -230,6 +232,15 @@ function resetTimer(index) {
   clearInterval(timerStates[index].interval);
   timerStates[index].timeLeft = timers[index].duration;
   updateTimerDisplay(index);
+}
+
+// Delete a timer
+function deleteTimer(index) {
+  clearInterval(timerStates[index].interval);
+  timers.splice(index, 1);
+  timerStates.splice(index, 1);
+  localStorage.setItem('timers', JSON.stringify(timers));
+  initTimers();
 }
 
 function initTimers() {
@@ -277,13 +288,106 @@ function initTimers() {
     resetBtn.textContent = "Reset";
     resetBtn.onclick = () => resetTimer(i);
 
-    controls.append(startBtn, pauseBtn, resetBtn);
+    const deleteBtn = document.createElement("button");
+    deleteBtn.className = "timer-btn";
+    deleteBtn.textContent = "Delete";
+    deleteBtn.onclick = () => deleteTimer(i);
+
+    controls.append(startBtn, pauseBtn, resetBtn, deleteBtn);
     box.append(label, circleWrapper, controls);
     container.appendChild(box);
 
     updateTimerDisplay(i);
   });
 }
+
+// Create a custom timer using modal overlay
+function createTimer() {
+  openModal("Enter timer name:", data => {
+    if (!data.name || isNaN(data.minutes) || data.minutes <= 0) {
+      showNotification("Invalid timer input.");
+      return;
+    }
+
+    timers.push({ label: data.name, duration: data.minutes * 60 });
+    timerStates.push({ timeLeft: data.minutes * 60, interval: null });
+    localStorage.setItem('timers', JSON.stringify(timers));
+    initTimers();
+  });
+}
+
+//--------------------------- Modal ---------------------------
+let modalCallback = null;
+let modalStep = 0;
+let modalData = {};
+let modalIsNotification = false; // flag for notification mode
+
+function openModal(title, callback) {
+  document.getElementById("modalTitle").textContent = title;
+  document.getElementById("modalInput").value = "";
+  document.getElementById("modalInput").style.display = "block";
+  document.getElementById("modalButtons").querySelector("button:last-child").style.display = "inline-block";
+  document.getElementById("modalOverlay").style.display = "flex";
+
+  modalIsNotification = false; // default mode
+  if (callback) modalCallback = callback;
+}
+
+function confirmModal() {
+  // Notification mode: just close on OK
+  if (modalIsNotification) {
+    const cb = modalCallback;
+    if (cb) cb();        // callback closes modal
+    else closeModal();
+    modalIsNotification = false;
+    modalCallback = null;
+    modalStep = 0;
+    modalData = {};
+    return;
+  }
+
+  // Normal two-step input flow
+  const input = document.getElementById("modalInput").value.trim();
+  if (!input) return;
+
+  if (modalStep === 0) {
+    modalData.name = input;
+    modalStep = 1;
+    document.getElementById("modalTitle").textContent = "Enter duration in minutes:";
+    document.getElementById("modalInput").value = "";
+  } else {
+    modalData.minutes = parseInt(input, 10);
+
+    // Call the callback BEFORE closing (closeModal clears modalCallback)
+    const cb = modalCallback;
+    const data = { ...modalData };
+    if (cb) cb(data);
+    closeModal();
+
+    modalCallback = null;
+    modalStep = 0;
+    modalData = {};
+  }
+}
+
+function closeModal() {
+  document.getElementById("modalOverlay").style.display = "none";
+  modalCallback = null;
+  modalStep = 0;
+  modalData = {};
+  modalIsNotification = false;
+}
+
+function showNotification(message) {
+  openModal(message, () => closeModal());
+  document.getElementById("modalInput").style.display = "none";
+  document.getElementById("modalButtons").querySelector("button:last-child").style.display = "none";
+  modalIsNotification = true; // mark notification mode
+  modalStep = 0;
+  modalData = {};
+}
+
+
 //--------------------------- Sidebar View Switching ---------------------------
 function showView(viewId) {
   const views = ["calendarView", "notesView", "checklistsView", "timerView", "settingsView"];
