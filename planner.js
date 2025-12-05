@@ -696,16 +696,25 @@ function renderWeeklyView() {
             }
           }
 
-          el.style.fontSize = '0.85em';
+          el.style.fontSize = '0.75em';
           el.style.wordWrap = 'break-word';
           if (t.checked) el.style.textDecoration = 'line-through';
           el.onclick = () => toggleTask(t.id);
 
           const del = document.createElement('button');
-          del.textContent = 'x';
-          del.style.marginLeft = '6px';
-          del.onclick = ev => { ev.stopPropagation(); deleteTask(t.id); };
+          del.innerHTML = '🗑️';   // trashcan emoji
+          del.style.marginLeft = '4px';
+          del.style.fontSize = '0.8em';
+          del.style.padding = '2px 4px';
+          del.style.border = 'none';
+          del.style.background = 'transparent';
+          del.style.cursor = 'pointer';
+          del.onclick = ev => { 
+            ev.stopPropagation(); 
+            deleteTask(t.id); 
+          };
           el.appendChild(del);
+
 
           const spanHours = minutesToHourIndexRange(t.startTime, t.endTime);
           if (spanHours.length > 1) {
@@ -728,15 +737,23 @@ function renderWeeklyView() {
           el.style.background = '#bfe3f39f';
           el.style.padding = '2px';
           el.style.margin = '2px 0';
-          el.style.fontSize = '0.85em';
+          el.style.fontSize = '0.75em';
           el.style.border = '1px solid #ccc';
           el.style.borderRadius = '4px';
           el.style.wordWrap = 'break-word';
 
           const del = document.createElement('button');
-          del.textContent = 'x';
-          del.style.marginLeft = '6px';
-          del.onclick = ev => { ev.stopPropagation(); deleteEvent(e.id); };
+          del.innerHTML = '🗑️';
+          del.style.marginLeft = '4px';
+          del.style.fontSize = '0.8em';
+          del.style.padding = '2px 4px';
+          del.style.border = 'none';
+          del.style.background = 'transparent';
+          del.style.cursor = 'pointer';
+          del.onclick = ev => { 
+            ev.stopPropagation(); 
+            deleteEvent(e.id); 
+          };
           el.appendChild(del);
 
           const spanHours = minutesToHourIndexRange(e.startTime, e.endTime);
@@ -821,15 +838,23 @@ function renderMonthlyView() {
         }
       }
 
-      el.style.fontSize = '0.85em';
+      el.style.fontSize = '0.75em';
       el.style.wordWrap = 'break-word';
       if (t.checked) el.style.textDecoration = 'line-through';
       el.onclick = () => toggleTask(t.id);
 
       const del = document.createElement('button');
-      del.textContent = 'x';
-      del.style.marginLeft = '6px';
-      del.onclick = ev => { ev.stopPropagation(); deleteTask(t.id); };
+      del.innerHTML = '🗑️';
+      del.style.marginLeft = '4px';
+      del.style.fontSize = '0.8em';
+      del.style.padding = '2px 4px';
+      del.style.border = 'none';
+      del.style.background = 'transparent';
+      del.style.cursor = 'pointer';
+      del.onclick = ev => { 
+        ev.stopPropagation(); 
+        deleteTask(t.id); 
+      };
       el.appendChild(del);
 
       cell.appendChild(el);
@@ -845,14 +870,22 @@ function renderMonthlyView() {
       el.style.background = '#bfe3f39f';
       el.style.padding = '2px';
       el.style.margin = '2px 0';
-      el.style.fontSize = '0.85em';
+      el.style.fontSize = '0.75em';
       el.style.border = '1px solid #ccc';
       el.style.borderRadius = '4px';
 
       const del = document.createElement('button');
-      del.textContent = 'x';
-      del.style.marginLeft = '6px';
-      del.onclick = ev => { ev.stopPropagation(); deleteEvent(e.id); };
+      del.innerHTML = '🗑️';
+      del.style.marginLeft = '4px';
+      del.style.fontSize = '0.8em';
+      del.style.padding = '2px 4px';
+      del.style.border = 'none';
+      del.style.background = 'transparent';
+      del.style.cursor = 'pointer';
+      del.onclick = ev => { 
+        ev.stopPropagation(); 
+        deleteEvent(e.id); 
+      };
       el.appendChild(del);
 
       cell.appendChild(el);
