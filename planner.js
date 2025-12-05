@@ -387,7 +387,6 @@ function showNotification(message) {
   modalData = {};
 }
 
-
 //--------------------------- Sidebar View Switching ---------------------------
 function showView(viewId) {
   const views = ["calendarView", "notesView", "checklistsView", "timerView", "settingsView"];
@@ -408,25 +407,148 @@ function showView(viewId) {
 }
 
 //--------------------------- Calendar ---------------------------
-const tasks = [
-  { date: "2025-11-06", title: "Math homework" },
-  { date: "2025-11-07", title: "Read history" },
-  { date: "2025-11-10", title: "Biology quiz" },
-  { date: "2025-11-15", title: "Group project" }
-];
 
+// ===== Data =====
+let tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
+let events = JSON.parse(localStorage.getItem('events') || '[]');
+
+// ===== Calendar state =====
 let currentView = 'monthly';
 let currentMonth = new Date().getMonth();
 let currentYear = new Date().getFullYear();
 let currentWeekStart = getStartOfWeek(new Date());
 
+// ===== Utilities =====
 function getStartOfWeek(date) {
   const d = new Date(date);
-  d.setDate(d.getDate() - d.getDay());
+  d.setDate(d.getDate() - d.getDay()); // Sunday start
   d.setHours(0, 0, 0, 0);
   return d;
 }
 
+function saveTasks() { localStorage.setItem('tasks', JSON.stringify(tasks)); }
+function saveEvents() { localStorage.setItem('events', JSON.stringify(events)); }
+
+function parseTimeToMinutes(t) {
+  const [h, m] = t.split(':').map(Number);
+  return h * 60 + m;
+}
+
+function minutesToHourIndexRange(startTime, endTime) {
+  const startMin = parseTimeToMinutes(startTime);
+  const endMin = parseTimeToMinutes(endTime);
+  const startHour = Math.floor(startMin / 60);
+  const endHour = Math.max(startHour, Math.floor((endMin - 1) / 60));
+  const hours = [];
+  for (let h = startHour; h <= endHour; h++) hours.push(h);
+  return hours;
+}
+
+function isoDate(dateObj) {
+  return dateObj.toISOString().split('T')[0];
+}
+
+function isTodayISO(iso) {
+  return iso === isoDate(new Date());
+}
+
+// ===== Tasks =====
+function createTask() {
+  const title = window.prompt('Task title:');
+  if (!title) return;
+  const date = window.prompt('Date (YYYY-MM-DD):', isoDate(new Date()));
+  if (!date) return;
+  const startTime = window.prompt('Start time (HH:MM):', '09:00');
+  if (!startTime) return;
+  const endTime = window.prompt('End time (HH:MM):', '10:00');
+  if (!endTime) return;
+
+  const newTask = { id: Date.now(), title, date, startTime, endTime, checked: false };
+  tasks.push(newTask);
+  saveTasks();
+  renderCalendar();
+  renderChecklist();
+}
+
+function toggleTask(id) {
+  const task = tasks.find(t => t.id === id);
+  if (!task) return;
+  task.checked = !task.checked;
+  saveTasks();
+  renderCalendar();
+  renderChecklist();
+}
+
+function deleteTask(id) {
+  tasks = tasks.filter(t => t.id !== id);
+  saveTasks();
+  renderCalendar();
+  renderChecklist();
+}
+
+// ===== Events =====
+function addEvent() {
+  const title = window.prompt('Event title:');
+  if (!title) return;
+  const date = window.prompt('Date (YYYY-MM-DD):', isoDate(new Date()));
+  if (!date) return;
+  const startTime = window.prompt('Start time (HH:MM):', '14:00');
+  if (!startTime) return;
+  const endTime = window.prompt('End time (HH:MM):', '15:00');
+  if (!endTime) return;
+  const repeat = window.prompt('Repeat (none/daily/weekly/monthly):', 'none') || 'none';
+
+  const newEvent = { id: Date.now(), title, date, startTime, endTime, repeat };
+  events.push(newEvent);
+  saveEvents();
+  renderCalendar();
+}
+
+function deleteEvent(id) {
+  events = events.filter(e => e.id !== id);
+  saveEvents();
+  renderCalendar();
+}
+
+function expandRepeatingEventsForDate(targetISO, baseEvents) {
+  const target = new Date(targetISO);
+  const targetDow = target.getDay();
+  const targetDayNum = target.getDate();
+
+  const out = [];
+  baseEvents.forEach(e => {
+    const base = new Date(e.date);
+    const sameDay = e.date === targetISO;
+
+    if (e.repeat === 'none') {
+      if (sameDay) out.push({ ...e });
+      return;
+    }
+
+    if (e.repeat === 'daily') {
+      if (target >= base) out.push({ ...e, date: targetISO });
+      return;
+    }
+
+    if (e.repeat === 'weekly') {
+      if (target >= base && targetDow === base.getDay()) {
+        out.push({ ...e, date: targetISO });
+      }
+      return;
+    }
+
+    if (e.repeat === 'monthly') {
+      if (target >= base && targetDayNum === base.getDate()) {
+        out.push({ ...e, date: targetISO });
+      }
+      return;
+    }
+  });
+
+  return out;
+}
+
+// ===== Navigation =====
 function setView(view) {
   currentView = view;
   const today = new Date();
@@ -439,66 +561,58 @@ function setView(view) {
 function changePeriod(offset) {
   if (currentView === 'monthly') {
     currentMonth += offset;
-    if (currentMonth < 0) {
-      currentMonth = 11;
-      currentYear--;
-    } else if (currentMonth > 11) {
-      currentMonth = 0;
-      currentYear++;
-    }
+    if (currentMonth < 0) { currentMonth = 11; currentYear--; }
+    else if (currentMonth > 11) { currentMonth = 0; currentYear++; }
   } else if (currentView === 'weekly') {
     currentWeekStart.setDate(currentWeekStart.getDate() + offset * 7);
   }
   renderCalendar();
 }
 
+// ===== Rendering orchestrator =====
 function renderCalendar() {
   const calendar = document.getElementById('calendar');
   const dayLabels = document.getElementById('day-labels');
+  if (!calendar || !dayLabels) return;
+
   calendar.innerHTML = '';
   dayLabels.innerHTML = '';
 
   if (currentView === 'weekly') {
-    const startOfWeek = new Date(currentWeekStart);
-
-    const spacer = document.createElement('div');
-    spacer.className = 'day-label-spacer';
-    dayLabels.appendChild(spacer);
-
-    for (let i = 0; i < 7; i++) {
-      const date = new Date(startOfWeek);
-      date.setDate(startOfWeek.getDate() + i);
-
-      const label = document.createElement('div');
-      label.textContent = date.toLocaleDateString(undefined, {
-        weekday: 'short',
-        day: 'numeric',
-        month: 'short'
-      });
-      label.className = 'day-label';
-      dayLabels.appendChild(label);
-    }
-
     renderWeeklyView();
-  } else if (currentView === 'monthly') {
+  } else {
     renderMonthlyView();
   }
 }
 
+// ===== Weekly View =====
 function renderWeeklyView() {
   const calendar = document.getElementById('calendar');
   const startOfWeek = new Date(currentWeekStart);
-  const monthName = startOfWeek.toLocaleString('default', { month: 'long' });
 
-  document.getElementById('calendar-title').textContent =
-    `${monthName} ${startOfWeek.getFullYear()}`;
+  const monthName = startOfWeek.toLocaleString('default', { month: 'long' });
+  const titleEl = document.getElementById('calendar-title');
+  if (titleEl) titleEl.textContent = `${monthName} ${startOfWeek.getFullYear()}`;
+
+  const dayLabels = document.getElementById('day-labels');
+  const spacer = document.createElement('div');
+  spacer.className = 'day-label-spacer';
+  dayLabels.appendChild(spacer);
+
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(startOfWeek);
+    d.setDate(startOfWeek.getDate() + i);
+    const label = document.createElement('div');
+    label.className = 'day-label';
+    label.textContent = d.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' });
+    dayLabels.appendChild(label);
+  }
 
   const container = document.createElement('div');
   container.className = 'week-grid';
 
   const timeColumn = document.createElement('div');
   timeColumn.className = 'time-column';
-
   for (let hour = 0; hour < 24; hour++) {
     const timeCell = document.createElement('div');
     const displayHour = ((hour + 11) % 12 + 1);
@@ -507,13 +621,12 @@ function renderWeeklyView() {
     timeCell.className = 'hour-row';
     timeColumn.appendChild(timeCell);
   }
-
   container.appendChild(timeColumn);
 
   for (let i = 0; i < 7; i++) {
-    const date = new Date(startOfWeek);
-    date.setDate(startOfWeek.getDate() + i);
-    const dateStr = date.toISOString().split('T')[0];
+    const d = new Date(startOfWeek);
+    d.setDate(startOfWeek.getDate() + i);
+    const dateStr = isoDate(d);
 
     const column = document.createElement('div');
     column.className = 'week-column';
@@ -522,14 +635,64 @@ function renderWeeklyView() {
       const hourBlock = document.createElement('div');
       hourBlock.className = 'hour-row';
 
-      const dayTasks = tasks.filter(t => t.date === dateStr);
-      dayTasks.forEach(t => {
-        const task = document.createElement('div');
-        task.textContent = t.title;
-        task.style.fontSize = '0.85em';
-        task.style.padding = '2px 0';
-        task.style.wordWrap = 'break-word';
-        hourBlock.appendChild(task);
+      // Tasks
+      tasks.filter(t => t.date === dateStr).forEach(t => {
+        const [hStart] = t.startTime.split(':').map(Number);
+        if (hStart === hour) {
+          const el = document.createElement('div');
+          el.textContent = `${t.title} (${t.startTime}-${t.endTime})`;
+          el.style.fontSize = '0.85em';
+          el.style.wordWrap = 'break-word';
+          if (t.checked) el.style.textDecoration = 'line-through';
+          el.onclick = () => toggleTask(t.id);
+
+          const del = document.createElement('button');
+          del.textContent = 'x';
+          del.style.marginLeft = '6px';
+          del.onclick = ev => { ev.stopPropagation(); deleteTask(t.id); };
+          el.appendChild(del);
+
+          const spanHours = minutesToHourIndexRange(t.startTime, t.endTime);
+          if (spanHours.length > 1) {
+            el.style.borderLeft = '3px solid #003d66';
+            el.style.paddingLeft = '6px';
+          }
+
+          hourBlock.appendChild(el);
+        }
+      });
+
+      // Events
+      const dayEvents = expandRepeatingEventsForDate(dateStr, events);
+      dayEvents.forEach(e => {
+        if (!e.startTime || !e.endTime) return; // guard
+
+        const [hStart] = e.startTime.split(':').map(Number);
+        if (hStart === hour) {
+          const el = document.createElement('div');
+          el.textContent = `${e.title} (${e.startTime}-${e.endTime})`;
+          el.style.background = '#bfe3f39f';
+          el.style.padding = '2px';
+          el.style.margin = '2px 0';
+          el.style.fontSize = '0.85em';
+          el.style.border = '1px solid #ccc';
+          el.style.borderRadius = '4px';
+          el.style.wordWrap = 'break-word';
+
+          const del = document.createElement('button');
+          del.textContent = 'x';
+          del.style.marginLeft = '6px';
+          del.onclick = ev => { ev.stopPropagation(); deleteEvent(e.id); };
+          el.appendChild(del);
+
+          const spanHours = minutesToHourIndexRange(e.startTime, e.endTime);
+          if (spanHours.length > 1) {
+            el.style.borderLeft = '3px solid #003d66';
+            el.style.paddingLeft = '6px';
+          }
+
+          hourBlock.appendChild(el);
+        }
       });
 
       column.appendChild(hourBlock);
@@ -541,43 +704,51 @@ function renderWeeklyView() {
   calendar.appendChild(container);
 }
 
+// ===== Monthly View =====
 function renderMonthlyView() {
   const calendar = document.getElementById('calendar');
+
   const firstDay = new Date(currentYear, currentMonth, 1);
   const lastDay = new Date(currentYear, currentMonth + 1, 0);
   const daysInMonth = lastDay.getDate();
 
-  document.getElementById('calendar-title').textContent =
-    `${firstDay.toLocaleString('default', { month: 'long' })} ${currentYear}`;
+  const titleEl = document.getElementById('calendar-title');
+  if (titleEl) {
+    titleEl.textContent = `${firstDay.toLocaleString('default', { month: 'long' })} ${currentYear}`;
+  }
 
+  // Build header + grid
   const grid = document.createElement('div');
   grid.style.display = 'grid';
   grid.style.gridTemplateColumns = 'repeat(7, 1fr)';
-  grid.style.gridAutoRows = '80px';
-  grid.style.gap = '0px';
+  grid.style.gridAutoRows = '100px';
+  grid.style.gap = '0';
 
-  ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].forEach(day => {
+  // Header row
+  ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].forEach(day => {
     const cell = document.createElement('div');
     cell.textContent = day;
     cell.style.fontWeight = 'bold';
-    cell.style.fontSize = '24px';
     cell.style.textAlign = 'center';
-    cell.style.marginTop = 'auto';
     cell.style.paddingBottom = '4px';
-    cell.style.boxSizing = 'border-box';
     grid.appendChild(cell);
   });
 
+  // Empty cells before first day
   for (let i = 0; i < firstDay.getDay(); i++) {
     grid.appendChild(document.createElement('div'));
   }
 
+  // Day cells
   for (let day = 1; day <= daysInMonth; day++) {
-    const date = new Date(currentYear, currentMonth, day);
-    const dateStr = date.toISOString().split('T')[0];
+    const d = new Date(currentYear, currentMonth, day);
+    const dateStr = isoDate(d);
+
     const cell = document.createElement('div');
     cell.className = 'calendar-cell';
-    if (dateStr === new Date().toISOString().split('T')[0]) {
+    cell.style.padding = '6px';
+
+    if (isTodayISO(dateStr)) {
       cell.classList.add('today');
     }
 
@@ -587,14 +758,45 @@ function renderMonthlyView() {
     header.style.marginBottom = '4px';
     cell.appendChild(header);
 
-    const dayTasks = tasks.filter(t => t.date === dateStr);
-    dayTasks.forEach(t => {
-      const task = document.createElement('div');
-      task.textContent = t.title;
-      task.style.fontSize = '0.85em';
-      task.style.padding = '2px 0';
-      task.style.wordWrap = 'break-word';
-      cell.appendChild(task);
+    // Tasks
+    tasks.filter(t => t.date === dateStr).forEach(t => {
+      const el = document.createElement('div');
+      el.textContent = `${t.title} (${t.startTime}-${t.endTime})`;
+      el.style.fontSize = '0.85em';
+      el.style.wordWrap = 'break-word';
+      if (t.checked) el.style.textDecoration = 'line-through';
+      el.onclick = () => toggleTask(t.id);
+
+      const del = document.createElement('button');
+      del.textContent = 'x';
+      del.style.marginLeft = '6px';
+      del.onclick = ev => { ev.stopPropagation(); deleteTask(t.id); };
+      el.appendChild(del);
+
+      cell.appendChild(el);
+    });
+
+    // Events (expanded for repeats)
+    const dayEvents = expandRepeatingEventsForDate(dateStr, events);
+    dayEvents.forEach(e => {
+      if (!e.startTime || !e.endTime) return; // guard
+
+      const el = document.createElement('div');
+      el.textContent = `${e.title} (${e.startTime}-${e.endTime})`;
+      el.style.background = '#bfe3f39f';
+      el.style.padding = '2px';
+      el.style.margin = '2px 0';
+      el.style.fontSize = '0.85em';
+      el.style.border = '1px solid #ccc';
+      el.style.borderRadius = '4px';
+
+      const del = document.createElement('button');
+      del.textContent = 'x';
+      del.style.marginLeft = '6px';
+      del.onclick = ev => { ev.stopPropagation(); deleteEvent(e.id); };
+      el.appendChild(del);
+
+      cell.appendChild(el);
     });
 
     grid.appendChild(cell);
@@ -602,6 +804,61 @@ function renderMonthlyView() {
 
   calendar.appendChild(grid);
 }
+
+// ===== Checklist View =====
+function renderChecklist() {
+  const container = document.getElementById('checklistsView');
+  if (!container) return;
+  container.innerHTML = '';
+
+  const list = document.createElement('div');
+  list.style.padding = '10px';
+
+  tasks.forEach(t => {
+    const row = document.createElement('div');
+    row.style.display = 'flex';
+    row.style.alignItems = 'center';
+    row.style.justifyContent = 'space-between';
+    row.style.margin = '6px 0';
+
+    const left = document.createElement('div');
+    left.style.display = 'flex';
+    left.style.alignItems = 'center';
+    left.style.gap = '8px';
+
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.checked = t.checked;
+    checkbox.onchange = () => toggleTask(t.id);
+
+    const label = document.createElement('span');
+    label.textContent = `${t.title} — ${t.date} ${t.startTime}-${t.endTime}`;
+    if (t.checked) label.style.textDecoration = 'line-through';
+
+    left.appendChild(checkbox);
+    left.appendChild(label);
+
+    const delBtn = document.createElement('button');
+    delBtn.textContent = 'Delete';
+    delBtn.onclick = () => deleteTask(t.id);
+
+    row.appendChild(left);
+    row.appendChild(delBtn);
+    list.appendChild(row);
+  });
+
+  container.appendChild(list);
+}
+
+// ===== Initial render =====
+document.addEventListener('DOMContentLoaded', () => {
+  renderCalendar();
+  renderChecklist();
+});
+
+
+
+
 
 //--------------------------- Clock ---------------------------
 function updateClock() {

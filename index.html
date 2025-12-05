@@ -21,7 +21,7 @@
 
     <div id="calendarView">
       <div id="calendar-header">
-        <!-- Left spacer to balance flex layout -->
+        <!-- Left spacer -->
         <div style="visibility: hidden;"></div>
 
         <!-- Center block: arrows + title + view switcher -->
@@ -46,6 +46,12 @@
           </div>
           <div class="digital-clock" id="digitalClock">00:00 AM</div>
         </div>
+      </div>
+
+      <!-- Action buttons -->
+      <div id="calendar-actions">
+        <button onclick="createTask()">+ New Task</button>
+        <button onclick="addEvent()">+ New Event</button>
       </div>
 
       <!-- Calendar Content -->
@@ -100,15 +106,24 @@
 
   <!-- Modal Overlay -->
   <div id="modalOverlay" style="display: none;">
-    <div id="modalBox">
-      <h3 id="modalTitle"></h3>
-      <input id="modalInput" type="text" placeholder="Type here..." />
-      <div id="modalButtons">
-        <button onclick="confirmModal()">OK</button>
-        <button onclick="closeModal()">Cancel</button>
-      </div>
+  <div id="modalBox">
+    <h3 id="modalTitle"></h3>
+    <input id="eventTitle" type="text" placeholder="Event title" />
+    <input id="eventDate" type="date" />
+    <input id="eventStart" type="time" />
+    <input id="eventEnd" type="time" />
+    <select id="eventRepeat">
+      <option value="none">No repeat</option>
+      <option value="daily">Daily</option>
+      <option value="weekly">Weekly</option>
+      <option value="monthly">Monthly</option>
+    </select>
+    <div id="modalButtons">
+      <button onclick="confirmEventModal()">OK</button>
+      <button onclick="closeModal()">Cancel</button>
     </div>
   </div>
+</div>
 
 </body>
 </html>
