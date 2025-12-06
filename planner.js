@@ -190,7 +190,8 @@ let timerStates = timers.map(t => ({
   interval: null
 }));
 
-function formatTime(seconds) {
+// FIXED: renamed to formatTimerTime to avoid collision with calendar formatTime
+function formatTimerTime(seconds) {
   const m = Math.floor(seconds / 60);
   const s = seconds % 60;
   return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
@@ -198,7 +199,9 @@ function formatTime(seconds) {
 
 function updateTimerDisplay(index) {
   const display = document.querySelector(`#timer-${index} .timer-circle`);
-  display.textContent = formatTime(timerStates[index].timeLeft);
+  if (display) {
+    display.textContent = formatTimerTime(timerStates[index].timeLeft);
+  }
 
   const image = document.querySelector(`#timer-${index} .timer-image`);
   if (image) {
