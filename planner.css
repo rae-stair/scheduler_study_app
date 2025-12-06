@@ -264,6 +264,21 @@ textarea {
   color: #003d66;
 }
 
+.cardDropdown {
+  min-width: 100px;
+  border-radius: 4px;
+}
+
+.dropdownOption {
+  padding: 6px 12px;
+  cursor: pointer;
+}
+
+.dropdownOption:hover {
+  background-color: #bfe3f3;
+}
+
+
 #exit{
   position:absolute;
   top: 0%;
