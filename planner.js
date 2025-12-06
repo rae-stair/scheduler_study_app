@@ -16,7 +16,6 @@ function addSet() {
   flashcardSets[setName] = [];
   localStorage.setItem('flashcardSets', JSON.stringify(flashcardSets));
   populateIconGrid();
-  document.getElementById("setBtn").style.display = "none";
   document.getElementById("message").value = "";
   document.getElementById("iconGrid").style.display = "none";
   document.getElementById("note-card").style.display = "block";
@@ -30,7 +29,7 @@ function addMessage() {
 
   if (!setName || !question || !answer) {
     alert("Question and answer cannot be empty.");
-    return;
+    return 0;
   }
 
   if (!flashcardSets[setName]) flashcardSets[setName] = [];
@@ -46,11 +45,11 @@ function addMessage() {
   document.getElementById("answer").value = "";
 
   alert("Flashcard added!");
+  return 1;
 }
 
 function saveSet() {
   const textarea = document.getElementById('message');
-  document.getElementById("setBtn").style.display = "block";
   document.getElementById("titletext").style.display = "none";
   document.getElementById("note-card").style.display = "none";
   document.getElementById("iconGrid").style.display = "grid";
@@ -62,7 +61,6 @@ function saveSet() {
 function openSet(id) {
   setName = id;
   const textarea = document.getElementById('message');
-  document.getElementById("setBtn").style.display = "none";
   document.getElementById("iconGrid").style.display = "none";
   document.getElementById("note-card").style.display = "block";
   textarea.readOnly = false;
@@ -83,7 +81,7 @@ function openFlash(id) {
   showFlashcard();
 }
 
-function showFlashcard() {
+function showFlashcard(edit) {
   const flashcards = flashcardSets[setName];
   const textarea = document.getElementById("message");
   const title = document.getElementById("titletext");
@@ -103,7 +101,7 @@ function showFlashcard() {
     return;
   }
 
-  textarea.readOnly = false;
+  textarea.readOnly = !edit;
 
   if (showingAnswer) {
     title.innerText = `Answer ${currentIdx + 1}`;
@@ -112,42 +110,38 @@ function showFlashcard() {
     title.innerText = `Question ${currentIdx + 1}`;
     textarea.value = card.question;
   }
-
-  textarea.readOnly = true;
 }
 
-function prevCard() {
-  currentIdx--;
-  showingAnswer = false;
-  showFlashcard();
-}
-
-function nextCard() {
-  currentIdx++;
+function nextCard(delta) {
+  currentIdx += delta;
   showingAnswer = false;
   showFlashcard();
 }
 
 function showAnswer() {
   showingAnswer = !showingAnswer;
-  showFlashcard();
+  card = document.getElementById("note-card");
+
+  card.classList.add("answer");
+  setTimeout(() => {
+    showFlashcard();
+  }, 500);
+  
+  setTimeout(() => {
+    card.classList.remove("answer");
+  }, 1000);
 }
 
-function deleteSet() {
-  if (!setName) return;
+function deleteSet(id) {
+  if (!id) return;
 
-  const confirmDelete = confirm(`Are you sure you want to delete the set "${setName}"? This cannot be undone.`);
+  const confirmDelete = confirm(`Are you sure you want to delete the set "${id}"? This cannot be undone.`);
   if (!confirmDelete) return;
 
-  delete flashcardSets[setName];
+  delete flashcardSets[id];
 
   localStorage.setItem("flashcardSets", JSON.stringify(flashcardSets));
-
-  document.getElementById("note-card").style.display = "none";
-  document.getElementById("iconGrid").style.display = "grid";
-  document.getElementById("setBtn").style.display = "block";
-
-  populateIconGrid();
+  saveSet();
 
   alert("Set deleted successfully.");
 }
@@ -156,10 +150,32 @@ function populateIconGrid() {
   const iconGrid = document.getElementById('iconGrid');
   iconGrid.innerHTML = '';
 
+  // --- Add "New Set" ghost card first ---
+  const addCard = document.createElement('div');
+  addCard.className = 'iconCard ghostCard';
+  addCard.onclick = () => addSet();
+
+  const addIcon = document.createElement('div');
+  addIcon.className = 'icon';
+  addIcon.textContent = "+";
+
+  const addLabel = document.createElement('div');
+  addLabel.className = 'iconLabel';
+  addLabel.textContent = "Add New Set";
+
+  addCard.append(addIcon, addLabel);
+  iconGrid.appendChild(addCard);
+
+  // --- Add the flashcard sets ---
   Object.keys(flashcardSets).forEach(set => {
+    let currentSet = set;
+
     const card = document.createElement('div');
     card.className = 'iconCard';
     card.id = set;
+
+
+    // left-click opens flashcard
     card.onclick = () => openFlash(set);
 
     const icon = document.createElement('div');
@@ -177,9 +193,64 @@ function populateIconGrid() {
     label.textContent = set;
 
     card.append(icon, label);
+
+    // --- create dropdown menu ---
+    const dropdown = document.createElement('div');
+    dropdown.className = 'cardDropdown';
+    dropdown.innerHTML = `
+      <div class="dropdownOption">Edit</div>
+      <div class="dropdownOption">Delete</div>
+    `;
+    dropdown.style.display = 'none';
+    dropdown.style.position = 'absolute';
+    dropdown.style.background = '#fff';
+    dropdown.style.border = '1px solid #ccc';
+    dropdown.style.boxShadow = '0 2px 6px rgba(0,0,0,0.2)';
+    dropdown.style.padding = '4px 0';
+    dropdown.style.zIndex = 10;
+
+    card.appendChild(dropdown);
+
+    // --- right-click event ---
+    card.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+
+      // hide other dropdowns
+      document.querySelectorAll('.cardDropdown').forEach(d => d.style.display = 'none');
+
+      // show this dropdown
+      dropdown.style.display = 'block';
+      dropdown.style.left = `${e.offsetX}px`;
+      dropdown.style.top = `${e.offsetY}px`;
+    });
+
+    // hide dropdown when cursor leaves the card
+    card.addEventListener('mouseleave', () => {
+      dropdown.style.display = 'none';
+    });
+
+
+    // --- dropdown option clicks ---
+    dropdown.querySelector('.dropdownOption:nth-child(1)').onclick = (e) => {
+      e.stopPropagation(); // prevent card onclick
+      openFlash(set);
+      dropdown.style.display = 'none';
+    };
+    dropdown.querySelector('.dropdownOption:nth-child(2)').onclick = (e) => {
+      e.stopPropagation();
+      deleteSet(card.id);
+      dropdown.style.display = 'none';
+    };
+
+    // hide dropdown if clicking outside
+    document.addEventListener('click', () => {
+      dropdown.style.display = 'none';
+    });
+
     iconGrid.appendChild(card);
   });
 }
+
 
 //--------------------------- Timers ---------------------------
 
