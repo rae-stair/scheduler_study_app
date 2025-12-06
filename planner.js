@@ -182,19 +182,22 @@ function populateIconGrid() {
 }
 
 //--------------------------- Timers ---------------------------
-const timers = [
-  { label: "t1", duration: 1 * 60 },
-  { label: "t2", duration: 2 * 60 },
-  { label: "t3", duration: 5 * 60 },
-  { label: "t4", duration: 10 * 60 }
-];
+
+// Load timers from localStorage if available, otherwise use defaults
+let timers = JSON.parse(localStorage.getItem('timers') || '[]');
+if (timers.length === 0) {
+  timers = [
+    { label: "Default", duration: 1 * 60 }
+  ];
+}
 
 let timerStates = timers.map(t => ({
   timeLeft: t.duration,
   interval: null
 }));
 
-function formatTime(seconds) {
+// FIXED: renamed to formatTimerTime to avoid collision with calendar formatTime
+function formatTimerTime(seconds) {
   const m = Math.floor(seconds / 60);
   const s = seconds % 60;
   return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
@@ -202,14 +205,16 @@ function formatTime(seconds) {
 
 function updateTimerDisplay(index) {
   const display = document.querySelector(`#timer-${index} .timer-circle`);
-  display.textContent = formatTime(timerStates[index].timeLeft);
+  if (display) {
+    display.textContent = formatTimerTime(timerStates[index].timeLeft);
+  }
 
   const image = document.querySelector(`#timer-${index} .timer-image`);
   if (image) {
     const total = timers[index].duration;
-    const remaining = Math.max(timerStates[index].timeLeft, 0); // clamp to 0
+    const remaining = Math.max(timerStates[index].timeLeft, 0);
     const percent = 1 - (remaining / total);
-    const maxRadius = 80; // half of 160px image
+    const maxRadius = 80;
     const radius = Math.min(Math.floor(percent * maxRadius), maxRadius);
     image.style.clipPath = `circle(${radius}px at 50% 50%)`;
   }
@@ -223,7 +228,7 @@ function startTimer(index) {
       updateTimerDisplay(index);
     } else {
       clearInterval(timerStates[index].interval);
-      alert(`${timers[index].label} finished!`);
+      showNotification(`${timers[index].label} finished!`);
     }
   }, 1000);
 }
@@ -236,6 +241,15 @@ function resetTimer(index) {
   clearInterval(timerStates[index].interval);
   timerStates[index].timeLeft = timers[index].duration;
   updateTimerDisplay(index);
+}
+
+// Delete a timer
+function deleteTimer(index) {
+  clearInterval(timerStates[index].interval);
+  timers.splice(index, 1);
+  timerStates.splice(index, 1);
+  localStorage.setItem('timers', JSON.stringify(timers));
+  initTimers();
 }
 
 function initTimers() {
@@ -283,13 +297,105 @@ function initTimers() {
     resetBtn.textContent = "Reset";
     resetBtn.onclick = () => resetTimer(i);
 
-    controls.append(startBtn, pauseBtn, resetBtn);
+    const deleteBtn = document.createElement("button");
+    deleteBtn.className = "timer-btn";
+    deleteBtn.textContent = "Delete";
+    deleteBtn.onclick = () => deleteTimer(i);
+
+    controls.append(startBtn, pauseBtn, resetBtn, deleteBtn);
     box.append(label, circleWrapper, controls);
     container.appendChild(box);
 
     updateTimerDisplay(i);
   });
 }
+
+// Create a custom timer using modal overlay
+function createTimer() {
+  openModal("Enter timer name:", data => {
+    if (!data.name || isNaN(data.minutes) || data.minutes <= 0) {
+      showNotification("Invalid timer input.");
+      return;
+    }
+
+    timers.push({ label: data.name, duration: data.minutes * 60 });
+    timerStates.push({ timeLeft: data.minutes * 60, interval: null });
+    localStorage.setItem('timers', JSON.stringify(timers));
+    initTimers();
+  });
+}
+
+//--------------------------- Modal ---------------------------
+let modalCallback = null;
+let modalStep = 0;
+let modalData = {};
+let modalIsNotification = false; // flag for notification mode
+
+function openModal(title, callback) {
+  document.getElementById("modalTitle").textContent = title;
+  document.getElementById("modalInput").value = "";
+  document.getElementById("modalInput").style.display = "block";
+  document.getElementById("modalButtons").querySelector("button:last-child").style.display = "inline-block";
+  document.getElementById("modalOverlay").style.display = "flex";
+
+  modalIsNotification = false; // default mode
+  if (callback) modalCallback = callback;
+}
+
+function confirmModal() {
+  // Notification mode: just close on OK
+  if (modalIsNotification) {
+    const cb = modalCallback;
+    if (cb) cb();        // callback closes modal
+    else closeModal();
+    modalIsNotification = false;
+    modalCallback = null;
+    modalStep = 0;
+    modalData = {};
+    return;
+  }
+
+  // Normal two-step input flow
+  const input = document.getElementById("modalInput").value.trim();
+  if (!input) return;
+
+  if (modalStep === 0) {
+    modalData.name = input;
+    modalStep = 1;
+    document.getElementById("modalTitle").textContent = "Enter duration in minutes:";
+    document.getElementById("modalInput").value = "";
+  } else {
+    modalData.minutes = parseInt(input, 10);
+
+    // Call the callback BEFORE closing (closeModal clears modalCallback)
+    const cb = modalCallback;
+    const data = { ...modalData };
+    if (cb) cb(data);
+    closeModal();
+
+    modalCallback = null;
+    modalStep = 0;
+    modalData = {};
+  }
+}
+
+function closeModal() {
+  document.getElementById("modalOverlay").style.display = "none";
+  modalCallback = null;
+  modalStep = 0;
+  modalData = {};
+  modalIsNotification = false;
+}
+
+function showNotification(message) {
+  openModal(message, () => closeModal());
+  document.getElementById("modalInput").style.display = "none";
+  document.getElementById("modalButtons").querySelector("button:last-child").style.display = "none";
+  modalIsNotification = true; // mark notification mode
+  modalStep = 0;
+  modalData = {};
+}
+
 //--------------------------- Sidebar View Switching ---------------------------
 function showView(viewId) {
   const views = ["calendarView", "notesView", "checklistsView", "timerView", "settingsView"];
@@ -310,25 +416,192 @@ function showView(viewId) {
 }
 
 //--------------------------- Calendar ---------------------------
-const tasks = [
-  { date: "2025-11-06", title: "Math homework" },
-  { date: "2025-11-07", title: "Read history" },
-  { date: "2025-11-10", title: "Biology quiz" },
-  { date: "2025-11-15", title: "Group project" }
-];
 
+// ===== Data =====
+let tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
+let events = JSON.parse(localStorage.getItem('events') || '[]');
+
+// ===== Calendar state =====
 let currentView = 'monthly';
 let currentMonth = new Date().getMonth();
 let currentYear = new Date().getFullYear();
 let currentWeekStart = getStartOfWeek(new Date());
 
+// ===== Utilities =====
 function getStartOfWeek(date) {
   const d = new Date(date);
-  d.setDate(d.getDate() - d.getDay());
+  d.setDate(d.getDate() - d.getDay()); // Sunday start
   d.setHours(0, 0, 0, 0);
   return d;
 }
 
+function saveTasks() { localStorage.setItem('tasks', JSON.stringify(tasks)); }
+function saveEvents() { localStorage.setItem('events', JSON.stringify(events)); }
+
+function parseTimeToMinutes(t) {
+  const [h, m] = t.split(':').map(Number);
+  return h * 60 + m;
+}
+
+function minutesToHourIndexRange(startTime, endTime) {
+  const startMin = parseTimeToMinutes(startTime);
+  const endMin = parseTimeToMinutes(endTime);
+  const startHour = Math.floor(startMin / 60);
+  const endHour = Math.max(startHour, Math.floor((endMin - 1) / 60));
+  const hours = [];
+  for (let h = startHour; h <= endHour; h++) hours.push(h);
+  return hours;
+}
+
+function isoDate(dateObj) {
+  return dateObj.toISOString().split('T')[0];
+}
+
+function isTodayISO(iso) {
+  return iso === isoDate(new Date());
+}
+
+// ===== Modal State =====
+let calendarModal = { type: null };
+
+// ===== Modal Helpers =====
+function openCalendarModal(type) {
+  calendarModal.type = type;
+  document.getElementById('calendarModalTitle').textContent =
+    type === 'task' ? 'New Task' : 'New Event';
+  document.getElementById('calendarModalOverlay').style.display = 'flex';
+
+  // reset fields
+  document.getElementById('calendarModalTitleInput').value = '';
+  document.getElementById('calendarModalDate').value = isoDate(new Date());
+  document.getElementById('calendarModalStart').value = '';
+  document.getElementById('calendarModalEnd').value = '';
+  document.getElementById('calendarModalRepeat').value = 'none';
+
+  const linkContainer = document.getElementById('calendarModalEventLinkContainer');
+  const select = document.getElementById('calendarModalEventLink');
+
+  if (type === 'task') {
+    linkContainer.style.display = 'block';
+    select.innerHTML = '<option value="">None</option>';
+    events.forEach(e => {
+      const opt = document.createElement('option');
+      opt.value = e.id;
+      opt.textContent = `${e.title} (${e.date})`;
+      select.appendChild(opt);
+    });
+  } else {
+    linkContainer.style.display = 'none'; // hide for events
+  }
+}
+
+
+function confirmCalendarModal() {
+  const title = document.getElementById('calendarModalTitleInput').value.trim();
+  const date = document.getElementById('calendarModalDate').value;
+  const startTime = document.getElementById('calendarModalStart').value;
+  const endTime = document.getElementById('calendarModalEnd').value;
+  const repeat = document.getElementById('calendarModalRepeat').value;
+
+  if (!title || !date || !startTime || !endTime) {
+    alert('Fill out all fields');
+    return;
+  }
+
+  if (calendarModal.type === 'task') {
+  const eventId = document.getElementById('calendarModalEventLink').value || null;
+  const newTask = { id: Date.now(), title, date, startTime, endTime, checked: false, eventId };
+  tasks.push(newTask);
+  saveTasks();
+  renderCalendar();
+  renderChecklist();
+} else if (calendarModal.type === 'event') {
+  const newEvent = { id: Date.now(), title, date, startTime, endTime, repeat };
+  events.push(newEvent);
+  saveEvents();
+  renderCalendar();
+}
+
+  closeCalendarModal();
+}
+
+function closeCalendarModal() {
+  document.getElementById('calendarModalOverlay').style.display = 'none';
+  calendarModal.type = null;
+}
+
+// ===== Tasks =====
+function createTask() {
+  openCalendarModal('task');
+}
+
+
+function toggleTask(id) {
+  const task = tasks.find(t => t.id === id);
+  if (!task) return;
+  task.checked = !task.checked;
+  saveTasks();
+  renderCalendar();
+  renderChecklist();
+}
+
+function deleteTask(id) {
+  tasks = tasks.filter(t => t.id !== id);
+  saveTasks();
+  renderCalendar();
+  renderChecklist();
+}
+
+// ===== Events =====
+function addEvent() {
+  openCalendarModal('event');
+}
+
+function deleteEvent(id) {
+  events = events.filter(e => e.id !== id);
+  saveEvents();
+  renderCalendar();
+}
+
+function expandRepeatingEventsForDate(targetISO, baseEvents) {
+  const target = new Date(targetISO);
+  const targetDow = target.getDay();
+  const targetDayNum = target.getDate();
+
+  const out = [];
+  baseEvents.forEach(e => {
+    const base = new Date(e.date);
+    const sameDay = e.date === targetISO;
+
+    if (e.repeat === 'none') {
+      if (sameDay) out.push({ ...e });
+      return;
+    }
+
+    if (e.repeat === 'daily') {
+      if (target >= base) out.push({ ...e, date: targetISO });
+      return;
+    }
+
+    if (e.repeat === 'weekly') {
+      if (target >= base && targetDow === base.getDay()) {
+        out.push({ ...e, date: targetISO });
+      }
+      return;
+    }
+
+    if (e.repeat === 'monthly') {
+      if (target >= base && targetDayNum === base.getDate()) {
+        out.push({ ...e, date: targetISO });
+      }
+      return;
+    }
+  });
+
+  return out;
+}
+
+// ===== Navigation =====
 function setView(view) {
   currentView = view;
   const today = new Date();
@@ -341,101 +614,198 @@ function setView(view) {
 function changePeriod(offset) {
   if (currentView === 'monthly') {
     currentMonth += offset;
-    if (currentMonth < 0) {
-      currentMonth = 11;
-      currentYear--;
-    } else if (currentMonth > 11) {
-      currentMonth = 0;
-      currentYear++;
-    }
+    if (currentMonth < 0) { currentMonth = 11; currentYear--; }
+    else if (currentMonth > 11) { currentMonth = 0; currentYear++; }
   } else if (currentView === 'weekly') {
     currentWeekStart.setDate(currentWeekStart.getDate() + offset * 7);
   }
   renderCalendar();
 }
 
+// ===== Rendering orchestrator =====
 function renderCalendar() {
   const calendar = document.getElementById('calendar');
   const dayLabels = document.getElementById('day-labels');
+  if (!calendar || !dayLabels) return;
+
   calendar.innerHTML = '';
   dayLabels.innerHTML = '';
 
   if (currentView === 'weekly') {
-    const startOfWeek = new Date(currentWeekStart);
+    renderWeeklyView();
+  } else {
+    renderMonthlyView();
+  }
+}
 
+// ===== Weekly View =====
+// Helper to format 24h "HH:MM" into 12h with AM/PM
+function formatTime(timeStr) {
+  const [hour, minute] = timeStr.split(':').map(Number);
+  const period = hour < 12 ? 'AM' : 'PM';
+  const displayHour = ((hour + 11) % 12) + 1; // convert 0–23 → 1–12
+  return `${displayHour}:${minute.toString().padStart(2, '0')} ${period}`;
+}
+
+function renderWeeklyView() {
+  const calendar = document.getElementById('calendar');
+  if (!calendar) return;
+  calendar.innerHTML = '';
+
+  const startOfWeek = new Date(currentWeekStart);
+
+  // Title
+  const monthName = startOfWeek.toLocaleString('default', { month: 'long' });
+  const titleEl = document.getElementById('calendar-title');
+  if (titleEl) titleEl.textContent = `${monthName} ${startOfWeek.getFullYear()}`;
+
+  // Day labels
+  const dayLabels = document.getElementById('day-labels');
+  if (dayLabels) {
+    dayLabels.innerHTML = '';
     const spacer = document.createElement('div');
     spacer.className = 'day-label-spacer';
     dayLabels.appendChild(spacer);
 
     for (let i = 0; i < 7; i++) {
-      const date = new Date(startOfWeek);
-      date.setDate(startOfWeek.getDate() + i);
-
+      const d = new Date(startOfWeek);
+      d.setDate(startOfWeek.getDate() + i);
       const label = document.createElement('div');
-      label.textContent = date.toLocaleDateString(undefined, {
-        weekday: 'short',
-        day: 'numeric',
-        month: 'short'
-      });
       label.className = 'day-label';
+      label.textContent = d.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' });
       dayLabels.appendChild(label);
     }
-
-    renderWeeklyView();
-  } else if (currentView === 'monthly') {
-    renderMonthlyView();
   }
-}
 
-function renderWeeklyView() {
-  const calendar = document.getElementById('calendar');
-  const startOfWeek = new Date(currentWeekStart);
-  const monthName = startOfWeek.toLocaleString('default', { month: 'long' });
-
-  document.getElementById('calendar-title').textContent =
-    `${monthName} ${startOfWeek.getFullYear()}`;
-
+  // Container + time column
   const container = document.createElement('div');
   container.className = 'week-grid';
 
   const timeColumn = document.createElement('div');
   timeColumn.className = 'time-column';
-
   for (let hour = 0; hour < 24; hour++) {
     const timeCell = document.createElement('div');
-    const displayHour = ((hour + 11) % 12 + 1);
-    const period = hour < 12 ? 'AM' : 'PM';
-    timeCell.textContent = `${displayHour}:00 ${period}`;
+    timeCell.textContent = formatTime(`${hour}:00`);
     timeCell.className = 'hour-row';
     timeColumn.appendChild(timeCell);
   }
-
   container.appendChild(timeColumn);
 
+  const ROW_HEIGHT = 25; // matches your CSS
+
+  // Build 7 day columns
   for (let i = 0; i < 7; i++) {
-    const date = new Date(startOfWeek);
-    date.setDate(startOfWeek.getDate() + i);
-    const dateStr = date.toISOString().split('T')[0];
+    const d = new Date(startOfWeek);
+    d.setDate(startOfWeek.getDate() + i);
+    const dateStr = isoDate(d);
 
     const column = document.createElement('div');
     column.className = 'week-column';
 
+    // Background grid rows (24 rows)
     for (let hour = 0; hour < 24; hour++) {
       const hourBlock = document.createElement('div');
       hourBlock.className = 'hour-row';
-
-      const dayTasks = tasks.filter(t => t.date === dateStr);
-      dayTasks.forEach(t => {
-        const task = document.createElement('div');
-        task.textContent = t.title;
-        task.style.fontSize = '0.85em';
-        task.style.padding = '2px 0';
-        task.style.wordWrap = 'break-word';
-        hourBlock.appendChild(task);
-      });
-
       column.appendChild(hourBlock);
     }
+
+    // === TASKS ===
+    tasks.filter(t => t.date === dateStr).forEach(t => {
+      const [hStart, hStartMin] = t.startTime.split(':').map(Number);
+      const [endHour, endMin] = t.endTime.split(':').map(Number);
+
+      const startRow = hStart + 1; // grid rows are 1-based
+      const durationHours = (endHour + endMin / 60) - (hStart + hStartMin / 60);
+      const spanRows = Math.max(1, Math.ceil(durationHours));
+      const height = durationHours * ROW_HEIGHT;
+
+      const el = document.createElement('div');
+      el.textContent = `${t.title} (${formatTime(t.startTime)}–${formatTime(t.endTime)})`;
+
+      if (t.eventId) {
+        const linkedEvent = events.find(e => e.id == t.eventId);
+        if (linkedEvent) el.textContent += ` → ${linkedEvent.title}`;
+      }
+
+      el.style.gridRow = `${startRow} / span ${spanRows}`;
+      el.style.height = `${height}px`;
+      el.style.background = '#fff';
+      el.style.border = '1px solid #ccc';
+      el.style.borderRadius = '4px';
+      el.style.padding = '2px';
+      el.style.fontSize = '0.75em';
+      el.style.wordWrap = 'break-word';
+      el.style.boxSizing = 'border-box';
+      el.style.marginLeft = '6px';
+      el.style.marginRight = '6px';
+      if (t.checked) el.style.textDecoration = 'line-through';
+      el.onclick = () => toggleTask(t.id);
+
+      const del = document.createElement('button');
+      del.innerHTML = '🗑️';
+      del.style.marginLeft = '4px';
+      del.style.fontSize = '0.8em';
+      del.style.padding = '2px 4px';
+      del.style.border = 'none';
+      del.style.background = 'transparent';
+      del.style.cursor = 'pointer';
+      del.onclick = ev => { ev.stopPropagation(); deleteTask(t.id); };
+      el.appendChild(del);
+
+      const spanHours = minutesToHourIndexRange(t.startTime, t.endTime);
+      if (spanHours.length > 1) {
+        el.style.borderLeft = '3px solid #003d66';
+        el.style.paddingLeft = '6px';
+      }
+
+      column.appendChild(el);
+    });
+
+    // === EVENTS ===
+    const dayEvents = expandRepeatingEventsForDate(dateStr, events);
+    dayEvents.forEach(e => {
+      if (!e.startTime || !e.endTime) return;
+      const [hStart, hStartMin] = e.startTime.split(':').map(Number);
+      const [endHour, endMin] = e.endTime.split(':').map(Number);
+
+      const startRow = hStart + 1;
+      const durationHours = (endHour + endMin / 60) - (hStart + hStartMin / 60);
+      const spanRows = Math.max(1, Math.ceil(durationHours));
+      const height = durationHours * ROW_HEIGHT;
+
+      const el = document.createElement('div');
+      el.textContent = `${e.title} (${formatTime(e.startTime)}–${formatTime(e.endTime)})`;
+      el.style.gridRow = `${startRow} / span ${spanRows}`;
+      el.style.height = `${height}px`;
+      el.style.background = '#bfe3f39f';
+      el.style.border = '1px solid #ccc';
+      el.style.borderRadius = '4px';
+      el.style.padding = '2px';
+      el.style.fontSize = '0.75em';
+      el.style.wordWrap = 'break-word';
+      el.style.boxSizing = 'border-box';
+      el.style.marginLeft = '6px';
+      el.style.marginRight = '6px';
+
+      const del = document.createElement('button');
+      del.innerHTML = '🗑️';
+      del.style.marginLeft = '4px';
+      del.style.fontSize = '0.8em';
+      del.style.padding = '2px 4px';
+      del.style.border = 'none';
+      del.style.background = 'transparent';
+      del.style.cursor = 'pointer';
+      del.onclick = ev => { ev.stopPropagation(); deleteEvent(e.id); };
+      el.appendChild(del);
+
+      const spanHours = minutesToHourIndexRange(e.startTime, e.endTime);
+      if (spanHours.length > 1) {
+        el.style.borderLeft = '3px solid #003d66';
+        el.style.paddingLeft = '6px';
+      }
+
+      column.appendChild(el);
+    });
 
     container.appendChild(column);
   }
@@ -443,30 +813,31 @@ function renderWeeklyView() {
   calendar.appendChild(container);
 }
 
+// ===== Monthly View =====
 function renderMonthlyView() {
   const calendar = document.getElementById('calendar');
+
   const firstDay = new Date(currentYear, currentMonth, 1);
   const lastDay = new Date(currentYear, currentMonth + 1, 0);
   const daysInMonth = lastDay.getDate();
 
-  document.getElementById('calendar-title').textContent =
-    `${firstDay.toLocaleString('default', { month: 'long' })} ${currentYear}`;
+  const titleEl = document.getElementById('calendar-title');
+  if (titleEl) {
+    titleEl.textContent = `${firstDay.toLocaleString('default', { month: 'long' })} ${currentYear}`;
+  }
 
   const grid = document.createElement('div');
   grid.style.display = 'grid';
   grid.style.gridTemplateColumns = 'repeat(7, 1fr)';
-  grid.style.gridAutoRows = '80px';
-  grid.style.gap = '0px';
+  grid.style.gridAutoRows = '100px';
+  grid.style.gap = '0';
 
-  ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].forEach(day => {
+  ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].forEach(day => {
     const cell = document.createElement('div');
     cell.textContent = day;
     cell.style.fontWeight = 'bold';
-    cell.style.fontSize = '24px';
     cell.style.textAlign = 'center';
-    cell.style.marginTop = 'auto';
     cell.style.paddingBottom = '4px';
-    cell.style.boxSizing = 'border-box';
     grid.appendChild(cell);
   });
 
@@ -475,11 +846,14 @@ function renderMonthlyView() {
   }
 
   for (let day = 1; day <= daysInMonth; day++) {
-    const date = new Date(currentYear, currentMonth, day);
-    const dateStr = date.toISOString().split('T')[0];
+    const d = new Date(currentYear, currentMonth, day);
+    const dateStr = isoDate(d);
+
     const cell = document.createElement('div');
     cell.className = 'calendar-cell';
-    if (dateStr === new Date().toISOString().split('T')[0]) {
+    cell.style.padding = '6px';
+
+    if (isTodayISO(dateStr)) {
       cell.classList.add('today');
     }
 
@@ -489,14 +863,70 @@ function renderMonthlyView() {
     header.style.marginBottom = '4px';
     cell.appendChild(header);
 
-    const dayTasks = tasks.filter(t => t.date === dateStr);
-    dayTasks.forEach(t => {
-      const task = document.createElement('div');
-      task.textContent = t.title;
-      task.style.fontSize = '0.85em';
-      task.style.padding = '2px 0';
-      task.style.wordWrap = 'break-word';
-      cell.appendChild(task);
+    // Tasks
+    tasks.filter(t => t.date === dateStr).forEach(t => {
+      const el = document.createElement('div');
+      el.textContent = `${t.title} (${t.startTime}-${t.endTime})`;
+
+      // show linked event
+      if (t.eventId) {
+        const linkedEvent = events.find(e => e.id == t.eventId);
+        if (linkedEvent) {
+          el.textContent += ` → ${linkedEvent.title}`;
+        }
+      }
+
+      el.style.fontSize = '0.75em';
+      el.style.wordWrap = 'break-word';
+      if (t.checked) el.style.textDecoration = 'line-through';
+      el.onclick = () => toggleTask(t.id);
+
+      const del = document.createElement('button');
+      del.innerHTML = '🗑️';
+      del.style.marginLeft = '4px';
+      del.style.fontSize = '0.8em';
+      del.style.padding = '2px 4px';
+      del.style.border = 'none';
+      del.style.background = 'transparent';
+      del.style.cursor = 'pointer';
+      del.onclick = ev => { 
+        ev.stopPropagation(); 
+        deleteTask(t.id); 
+      };
+      el.appendChild(del);
+
+      cell.appendChild(el);
+    });
+
+    // Events
+    const dayEvents = expandRepeatingEventsForDate(dateStr, events);
+    dayEvents.forEach(e => {
+      if (!e.startTime || !e.endTime) return;
+
+      const el = document.createElement('div');
+      el.textContent = `${e.title} (${e.startTime}-${e.endTime})`;
+      el.style.background = '#bfe3f39f';
+      el.style.padding = '2px';
+      el.style.margin = '2px 0';
+      el.style.fontSize = '0.75em';
+      el.style.border = '1px solid #ccc';
+      el.style.borderRadius = '4px';
+
+      const del = document.createElement('button');
+      del.innerHTML = '🗑️';
+      del.style.marginLeft = '4px';
+      del.style.fontSize = '0.8em';
+      del.style.padding = '2px 4px';
+      del.style.border = 'none';
+      del.style.background = 'transparent';
+      del.style.cursor = 'pointer';
+      del.onclick = ev => { 
+        ev.stopPropagation(); 
+        deleteEvent(e.id); 
+      };
+      el.appendChild(del);
+
+      cell.appendChild(el);
     });
 
     grid.appendChild(cell);
@@ -504,6 +934,61 @@ function renderMonthlyView() {
 
   calendar.appendChild(grid);
 }
+
+// ===== Checklist View =====
+function renderChecklist() {
+  const container = document.getElementById('checklistsView');
+  if (!container) return;
+  container.innerHTML = '';
+
+  const list = document.createElement('div');
+  list.style.padding = '10px';
+
+  tasks.forEach(t => {
+    const row = document.createElement('div');
+    row.style.display = 'flex';
+    row.style.alignItems = 'center';
+    row.style.justifyContent = 'space-between';
+    row.style.margin = '6px 0';
+
+    const left = document.createElement('div');
+    left.style.display = 'flex';
+    left.style.alignItems = 'center';
+    left.style.gap = '8px';
+
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.checked = t.checked;
+    checkbox.onchange = () => toggleTask(t.id);
+
+    const label = document.createElement('span');
+    label.textContent = `${t.title} — ${t.date} ${t.startTime}-${t.endTime}`;
+    if (t.checked) label.style.textDecoration = 'line-through';
+
+    left.appendChild(checkbox);
+    left.appendChild(label);
+
+    const delBtn = document.createElement('button');
+    delBtn.textContent = 'Delete';
+    delBtn.onclick = () => deleteTask(t.id);
+
+    row.appendChild(left);
+    row.appendChild(delBtn);
+    list.appendChild(row);
+  });
+
+  container.appendChild(list);
+}
+
+// ===== Initial render =====
+document.addEventListener('DOMContentLoaded', () => {
+  renderCalendar();
+  renderChecklist();
+});
+
+
+
+
 
 //--------------------------- Clock ---------------------------
 function updateClock() {
