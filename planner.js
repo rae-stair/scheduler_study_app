@@ -630,6 +630,14 @@ function renderCalendar() {
 }
 
 // ===== Weekly View =====
+// Helper to format 24h "HH:MM" into 12h with AM/PM
+function formatTime(timeStr) {
+  const [hour, minute] = timeStr.split(':').map(Number);
+  const period = hour < 12 ? 'AM' : 'PM';
+  const displayHour = ((hour + 11) % 12) + 1; // convert 0–23 → 1–12
+  return `${displayHour}:${minute.toString().padStart(2, '0')} ${period}`;
+}
+
 function renderWeeklyView() {
   const calendar = document.getElementById('calendar');
   if (!calendar) return;
@@ -668,9 +676,7 @@ function renderWeeklyView() {
   timeColumn.className = 'time-column';
   for (let hour = 0; hour < 24; hour++) {
     const timeCell = document.createElement('div');
-    const displayHour = ((hour + 11) % 12 + 1);
-    const period = hour < 12 ? 'AM' : 'PM';
-    timeCell.textContent = `${displayHour}:00 ${period}`;
+    timeCell.textContent = formatTime(`${hour}:00`);
     timeCell.className = 'hour-row';
     timeColumn.appendChild(timeCell);
   }
@@ -705,7 +711,7 @@ function renderWeeklyView() {
       const height = durationHours * ROW_HEIGHT;
 
       const el = document.createElement('div');
-      el.textContent = `${t.title} (${t.startTime}-${t.endTime})`;
+      el.textContent = `${t.title} (${formatTime(t.startTime)}–${formatTime(t.endTime)})`;
 
       if (t.eventId) {
         const linkedEvent = events.find(e => e.id == t.eventId);
@@ -759,7 +765,7 @@ function renderWeeklyView() {
       const height = durationHours * ROW_HEIGHT;
 
       const el = document.createElement('div');
-      el.textContent = `${e.title} (${e.startTime}-${e.endTime})`;
+      el.textContent = `${e.title} (${formatTime(e.startTime)}–${formatTime(e.endTime)})`;
       el.style.gridRow = `${startRow} / span ${spanRows}`;
       el.style.height = `${height}px`;
       el.style.background = '#bfe3f39f';

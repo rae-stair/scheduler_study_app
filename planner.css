@@ -161,14 +161,18 @@ button:hover {
   border: 1px solid #ccc;
   border-radius: 4px;
   padding: 2px;
-  font-size: 0.75em;
-  word-wrap: break-word;
+  font-size: 0.75em;          
+  line-height: 1.2;
   box-sizing: border-box;
   margin: 0 6px;
   z-index: 2;
   display: flex;
-  align-items: center;
+  align-items: flex-start;    
   justify-content: space-between;
+  overflow: hidden;           
+  text-overflow: ellipsis;    
+  white-space: normal;        
+  word-break: break-word;     
 }
 
 .week-column .task-block {
