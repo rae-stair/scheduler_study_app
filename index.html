@@ -66,11 +66,11 @@
           <button class="cardBtn" onclick="saveSet()">save</button>
         </div>
         <div id="cdBtn">
-          <button class="cardBtn" id="prev" onclick="prevCard()">←</button>
-          <button class="cardBtn" id="next" onclick="nextCard()">→</button>
-          <button class="cardBtn" id="answer" onclick="showAnswer()">Answer</button>
-          <button class="cardBtn" id="exit" onclick="saveSet()">x</button>
-          <button id="deleteSetBtn" onclick="deleteSet()">Delete Set</button>
+          <button class="cardBtn" id="prev"         onclick="nextCard(-1)"         >←</button>
+          <button class="cardBtn" id="next"         onclick="nextCard( 1)"          >→</button>
+          <button class="cardBtn" id="answer"       onclick="showAnswer()"    >Answer</button>
+          <button class="cardBtn" id="exit"         onclick="saveSet()"            >x</button>
+          <button                 id="deleteSetBtn" onclick="deleteSet()" >Delete Set</button>
         </div>
       </div>
     </div>

@@ -173,19 +173,33 @@ button:hover {
 }
 
 /* === NOTES / FLASHCARDS === */
+
 #note-card {
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
   border-radius: 5px;
-  width: 60vw;
-  height: 60vh;
   background-color: #bfe3f39f;
   border: 1px solid #ccc;
+  width: 60vw;
+  height: 60vh;
   display: none;
   padding: 10px;
   box-sizing: border-box;
+
+  transform-style: preserve-3d;
+  transform: translate(-50%, -50%) rotateY(0deg);
+}
+
+.answer {
+  animation: rotateSequence 1s ease-in-out forwards;
+}
+
+@keyframes rotateSequence {
+  0%   { transform: translate(-50%, -50%) rotateY(0deg); }
+  50%  { transform: translate(-50%, -50%) rotateY(90deg); }  /* first rotation */
+  100% { transform: translate(-50%, -50%) rotateY(0deg); } /* second rotation */
 }
 
 #titletext {
@@ -248,6 +262,13 @@ textarea {
   margin-right: 5px;
   cursor: pointer;
   color: #003d66;
+}
+
+#exit{
+  position:absolute;
+  top: 0%;
+  left: 100%;
+  transform: translate(-100%, 0%);
 }
 
 .cardBtn:hover {

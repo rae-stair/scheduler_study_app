@@ -116,21 +116,24 @@ function showFlashcard() {
   textarea.readOnly = true;
 }
 
-function prevCard() {
-  currentIdx--;
-  showingAnswer = false;
-  showFlashcard();
-}
-
-function nextCard() {
-  currentIdx++;
+function nextCard(delta) {
+  currentIdx += delta;
   showingAnswer = false;
   showFlashcard();
 }
 
 function showAnswer() {
   showingAnswer = !showingAnswer;
-  showFlashcard();
+  card = document.getElementById("note-card");
+
+  card.classList.add("answer");
+  setTimeout(() => {
+    showFlashcard();
+  }, 500);
+  
+  setTimeout(() => {
+    card.classList.remove("answer");
+  }, 1000);
 }
 
 function deleteSet() {
@@ -142,12 +145,7 @@ function deleteSet() {
   delete flashcardSets[setName];
 
   localStorage.setItem("flashcardSets", JSON.stringify(flashcardSets));
-
-  document.getElementById("note-card").style.display = "none";
-  document.getElementById("iconGrid").style.display = "grid";
-  document.getElementById("setBtn").style.display = "block";
-
-  populateIconGrid();
+  saveSet();
 
   alert("Set deleted successfully.");
 }
