@@ -24,6 +24,12 @@
         <!-- Left spacer -->
         <div style="visibility: hidden;"></div>
 
+         <!-- Action buttons -->
+        <div id="calendar-actions">
+          <button onclick="createTask()"> + New Task </button>
+          <button onclick="addEvent()">+ New Event</button>
+        </div>
+
         <!-- Center block: arrows + title + view switcher -->
         <div id="title-block">
           <div id="title-nav">
@@ -48,11 +54,7 @@
         </div>
       </div>
 
-      <!-- Action buttons -->
-      <div id="calendar-actions">
-        <button onclick="createTask()">+ New Task</button>
-        <button onclick="addEvent()">+ New Event</button>
-      </div>
+      
 
       <!-- Calendar Content -->
       <div id="day-labels"></div>

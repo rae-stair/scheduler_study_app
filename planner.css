@@ -66,6 +66,14 @@ button:hover {
   overflow: hidden;
 }
 
+#calendar-actions {
+  display: flex;
+  flex-direction: column;   /* stack vertically */
+  gap: 10px;                /* spacing between buttons */
+  align-items: flex-start;  /* align to left edge */
+}
+
+
 /* === CALENDAR VIEW === */
 #view-switcher {
   display: flex;
