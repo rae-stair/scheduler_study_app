@@ -11,8 +11,8 @@
   <!-- Sidebar Navigation -->
   <div id="sidebar">
     <button class="icon-button active" onclick="showView('calendarView')">📅</button>
-    <button class="icon-button" onclick="showView('notesView')">📖</button>
     <button class="icon-button" onclick="showView('checklistsView')">✔️</button>
+    <button class="icon-button" onclick="showView('notesView')">📖</button>
     <button class="icon-button" onclick="showView('timerView')">⏰</button>
     <button class="icon-button" onclick="showView('settingsView')">⚙️</button>
   </div>
@@ -21,8 +21,14 @@
 
     <div id="calendarView">
       <div id="calendar-header">
-        <!-- Left spacer to balance flex layout -->
+        <!-- Left spacer -->
         <div style="visibility: hidden;"></div>
+
+         <!-- Action buttons -->
+        <div id="calendar-actions">
+          <button onclick="createTask()"> + New Task </button>
+          <button onclick="addEvent()">+ New Event</button>
+        </div>
 
         <!-- Center block: arrows + title + view switcher -->
         <div id="title-block">
@@ -48,6 +54,8 @@
         </div>
       </div>
 
+      
+
       <!-- Calendar Content -->
       <div id="day-labels"></div>
       <div id="calendar"></div>
@@ -55,7 +63,6 @@
 
     <!-- Notes / Flashcards View -->
     <div id="notesView" style="display: none;">
-      <button id="setBtn" onclick="addSet()">+ New Set</button>
       <div id="iconGrid"></div>
       <div id="note-card">
         <h1 id="titletext"></h1>
@@ -66,17 +73,18 @@
           <button class="cardBtn" onclick="saveSet()">save</button>
         </div>
         <div id="cdBtn">
-          <button class="cardBtn" id="prev" onclick="prevCard()">←</button>
-          <button class="cardBtn" id="next" onclick="nextCard()">→</button>
-          <button class="cardBtn" id="answer" onclick="showAnswer()">Answer</button>
-          <button class="cardBtn" id="exit" onclick="saveSet()">x</button>
-          <button id="deleteSetBtn" onclick="deleteSet()">Delete Set</button>
+          <button class="cardBtn" id="prev"         onclick="nextCard(-1)"         >←</button>
+          <button class="cardBtn" id="next"         onclick="nextCard( 1)"          >→</button>
+          <button class="cardBtn" id="answer"       onclick="showAnswer()"    >Answer</button>
+          <button class="cardBtn" id="exit"         onclick="saveSet()"            >x</button>
+          <button                 id="deleteSetBtn" onclick="deleteSet(setName)" >Delete Set</button>
         </div>
       </div>
     </div>
 
     <!-- Timers View -->
     <div id="timerView" style="display: none;">
+      <button onclick="createTimer()">+ New Timer</button>  
       <div id="timer-container"></div>
     </div>
 
@@ -92,10 +100,72 @@
 
   <!-- Scripts -->
   <script src="planner.js"></script>
-
   <script>
-  window.onload = () => showView("calendarView");
+    window.onload = () => showView("calendarView");
   </script>
+
+  <!-- Calendar Modal -->
+  <div id="calendarModalOverlay" style="display:none; position:fixed; top:0; left:0;
+       width:100%; height:100%; background:rgba(0,0,0,0.5);
+       justify-content:center; align-items:center; z-index:1000;">
+    <div style="background:#fff; padding:20px; border-radius:8px; width:300px;">
+      <h2 id="calendarModalTitle">New Item</h2>
+
+      <label>Title:<br>
+        <input type="text" id="calendarModalTitleInput">
+      </label><br><br>
+
+      <label>Date:<br>
+        <input type="date" id="calendarModalDate">
+      </label><br><br>
+
+      <label>Start Time:<br>
+        <input type="time" id="calendarModalStart">
+      </label><br><br>
+
+      <label>End Time:<br>
+        <input type="time" id="calendarModalEnd">
+      </label><br><br>
+
+      <label>Repeat:<br>
+        <select id="calendarModalRepeat">
+          <option value="none">None</option>
+          <option value="daily">Daily</option>
+          <option value="weekly">Weekly</option>
+          <option value="monthly">Monthly</option>
+        </select>
+      </label><br><br>
+
+      <div id="calendarModalEventLinkContainer" style="display:none;">
+        <label>Linked Event:<br>
+          <select id="calendarModalEventLink">
+            <option value="">None</option>
+          </select>
+        </label><br><br>
+      </div>
+
+      <button onclick="confirmCalendarModal()">Confirm</button>
+      <button onclick="closeCalendarModal()">Cancel</button>
+    </div>
+  </div>
+
+  <!-- Timer Modal (matches timer JS) -->
+  <div id="modalOverlay" style="display:none; position:fixed; top:0; left:0;
+      width:100%; height:100%; background:rgba(0,0,0,0.5);
+      justify-content:center; align-items:center; z-index:1000;">
+    <div id="modalBox" style="background:#fff; padding:20px; border-radius:8px; width:300px;">
+      <h2 id="modalTitle">Enter timer name:</h2>
+
+      <input type="text" id="modalInput" style="width:100%; box-sizing:border-box;">
+
+      <div id="modalButtons" style="margin-top:12px; display:flex; gap:8px; justify-content:flex-end;">
+        <button onclick="confirmModal()">OK</button>
+        <button onclick="closeModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+
 
 </body>
 </html>
