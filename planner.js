@@ -164,7 +164,13 @@ function populateIconGrid() {
 
     const icon = document.createElement('div');
     icon.className = 'icon';
-    icon.textContent = "📒";
+    const img = document.createElement('img');
+    img.src = "https://cdn-icons-png.flaticon.com/512/2166/2166724.png";   // <-- your image file
+    img.className = "iconImage"; // optional CSS
+    img.style.width = "60px";
+    img.style.height = "60px";
+    img.style.objectFit = "contain";
+    icon.appendChild(img);
 
     const label = document.createElement('div');
     label.className = 'iconLabel';
