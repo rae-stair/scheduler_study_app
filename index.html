@@ -6,6 +6,23 @@
   <link rel="stylesheet" href="planner.css">
   <link rel="stylesheet" href="notes.css">
   <link rel="stylesheet" href="timer.css">
+
+<style>
+    #iconGrid .iconCard .trashIcon {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      width: 22px;
+      height: 22px;
+      cursor: pointer;
+      opacity: 0.8;
+      transition: opacity 0.2s;
+    }
+
+    #iconGrid .iconCard .trashIcon:hover {
+      opacity: 1;
+    }
+  </style>
 </head>
 <body>
   <!-- Sidebar Navigation -->
@@ -77,7 +94,6 @@
           <button class="cardBtn" id="next"         onclick="nextCard( 1)"          >→</button>
           <button class="cardBtn" id="answer"       onclick="showAnswer()"    >Answer</button>
           <button class="cardBtn" id="exit"         onclick="saveSet()"            >x</button>
-          <button                 id="deleteSetBtn" onclick="deleteSet(setName)" >Delete Set</button>
         </div>
       </div>
     </div>
