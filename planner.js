@@ -194,12 +194,38 @@ function populateIconGrid() {
 
     card.append(icon, label);
 
+    // --- Visible trash icon (top-right) ---
+const trash = document.createElement("img");
+trash.src = "https://cdn-icons-png.flaticon.com/512/484/484662.png"; // use your own icon here
+trash.className = "trashIcon";
+/*
+trash.style.position = "absolute";
+trash.style.top = "8px";
+trash.style.right = "8px";
+trash.style.width = "22px";
+trash.style.height = "22px";
+trash.style.cursor = "pointer";
+trash.style.opacity = "0.85";
+*/
+
+// delete behavior
+trash.onclick = (e) => {
+  e.stopPropagation(); // prevent opening flashcard
+  const confirmDelete = confirm(`Delete the set "${set}"?`);
+  if (!confirmDelete) return;
+
+  deleteSet(set);
+  populateIconGrid();
+};
+
+card.appendChild(trash);
+
+
     // --- create dropdown menu ---
     const dropdown = document.createElement('div');
     dropdown.className = 'cardDropdown';
     dropdown.innerHTML = `
       <div class="dropdownOption">Edit</div>
-      <div class="dropdownOption">Delete</div>
     `;
     dropdown.style.display = 'none';
     dropdown.style.position = 'absolute';
@@ -234,11 +260,6 @@ function populateIconGrid() {
     dropdown.querySelector('.dropdownOption:nth-child(1)').onclick = (e) => {
       e.stopPropagation(); // prevent card onclick
       openFlash(set);
-      dropdown.style.display = 'none';
-    };
-    dropdown.querySelector('.dropdownOption:nth-child(2)').onclick = (e) => {
-      e.stopPropagation();
-      deleteSet(card.id);
       dropdown.style.display = 'none';
     };
 
