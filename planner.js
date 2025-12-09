@@ -25,27 +25,33 @@ function addSet() {
 }
 
 function addMessage() {
+  if (!setName) {
+    alert("No set is selected.");
+    return;
+  }
+
   const question = document.getElementById("message").value.trim();
   const answer = document.getElementById("answer").value.trim();
 
-  if (!setName || !question || !answer) {
+  if (!question || !answer) {
     alert("Question and answer cannot be empty.");
     return;
   }
 
-  if (!flashcardSets[setName]) flashcardSets[setName] = [];
-
-  flashcardSets[setName].push({
-    question: question,
-    answer: answer
-  });
-
+  flashcardSets[setName].push({ question, answer });
   localStorage.setItem("flashcardSets", JSON.stringify(flashcardSets));
 
   document.getElementById("message").value = "";
   document.getElementById("answer").value = "";
 
   alert("Flashcard added!");
+
+  document.getElementById("cdBtn").style.display = "none";
+  document.getElementById("edBtn").style.display = "block";
+
+  document.getElementById("message").readOnly = false;
+  document.getElementById("answer").readOnly = false;
+
 }
 
 function saveSet() {
@@ -62,11 +68,12 @@ function saveSet() {
 function openSet(id) {
   setName = id;
   const textarea = document.getElementById('message');
+  const ans = document.getElementById('answer');
   document.getElementById("setBtn").style.display = "none";
   document.getElementById("iconGrid").style.display = "none";
   document.getElementById("note-card").style.display = "block";
   textarea.readOnly = false;
-  textarea.style.outline = "";
+  ans.readyOnly = false;
 }
 
 function openFlash(id) {
@@ -165,7 +172,7 @@ function populateIconGrid() {
     const icon = document.createElement('div');
     icon.className = 'icon';
     const img = document.createElement('img');
-    img.src = "https://cdn-icons-png.flaticon.com/512/2166/2166724.png";   // <-- your image file
+    img.src = "https://cdn-icons-png.flaticon.com/512/2166/2166724.png";
     img.className = "iconImage"; // optional CSS
     img.style.width = "60px";
     img.style.height = "60px";
